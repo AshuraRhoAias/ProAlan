@@ -310,3 +310,59 @@ html, body, #root { height: 100%; font-family: 'Inter', system-ui, sans-serif; b
   .shift-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .pie-row { grid-template-columns: 1fr; }
 }
+
+/* ── User Menu Popup ── */
+.user-menu-popup {
+  position: absolute; top: 52px; left: 0; z-index: 200;
+  background: var(--bg-card); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 16px; min-width: 220px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+.theme-swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.theme-swatch {
+  width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: transform 0.1s;
+}
+.theme-swatch:hover { transform: scale(1.15); }
+.theme-swatch.active { border-color: var(--text-dark); }
+.theme-row-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+
+/* ── Customer Type Select ── */
+.ctype-list { display: flex; flex-direction: column; gap: 6px; }
+.ctype-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.ctype-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+.ctype-name { flex: 1; font-size: 13px; }
+.ctype-select-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.ctype-select-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--bg-card); cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--text-dark);
+  transition: border-color 0.15s, background 0.15s;
+}
+.ctype-select-btn:hover { border-color: var(--amber); background: var(--amber-pale); }
+.ctype-selected { background: var(--amber-pale) !important; }
+
+/* ── Kitchen Checkboxes ── */
+.checkbox-item { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.kitchen-checkbox { width: 16px; height: 16px; accent-color: var(--amber); cursor: pointer; }
+
+/* ── User Manager ── */
+.user-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.user-row-info { display: flex; align-items: center; gap: 10px; }
+.user-row-name { font-size: 13px; font-weight: 600; }
+.user-role-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
+.role-manager { background: #fef9c3; color: #92400e; }
+.role-kitchen { background: #d1fae5; color: #065f46; }
+.role-waiter { background: #dbeafe; color: #1e40af; }
+.role-admin { background: #fce7f3; color: #9d174d; }
+
+/* ── Dark theme body ── */
+[data-theme="dark-warm"],
+[data-theme="dark-forest"],
+[data-theme="dark-ocean"],
+[data-theme="dark-rose"],
+[data-theme="dark-slate"] {
+  color-scheme: dark;
+}
