@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { MOCK_TABLES } from '../data/mockData';
 import type { Table, OrderChannel } from '../types';
+import OrderModal from '../components/modals/OrderModal';
 
-const CHANNEL_COLORS: Record<OrderChannel, string> = {
+const CHANNEL_COLORS: Record<string, string> = {
   DIRECT: '#6b7280', DIDI: '#f59e0b', UBER: '#10b981', RAPPI: '#ef4444', 'MOB+': '#8b5cf6',
 };
 
@@ -12,22 +13,22 @@ interface Props { restaurantName: string }
 
 export default function Dashboard({ restaurantName }: Props) {
   const [tables, setTables] = useState<Table[]>(MOCK_TABLES);
-  const [orderModal, setOrderModal] = useState<Table | null>(null);
+  const [orderTable, setOrderTable] = useState<Table | null>(null);
 
-  const handleOrder = (table: Table) => {
-    if (table.status === 'occupied') {
-      // view order — for now just toggle back
-      setTables(prev => prev.map(t => t.id === table.id ? { ...t, status: 'available', currentOrderId: undefined } : t));
-    } else {
-      setOrderModal(table);
-    }
-  };
-
-  const startOrder = (tableId: string, _channel: OrderChannel) => {
+  const handleConfirmOrder = (tableId: string) => {
     setTables(prev => prev.map(t =>
       t.id === tableId ? { ...t, status: 'occupied', currentOrderId: `o${Date.now()}` } : t
     ));
-    setOrderModal(null);
+    setOrderTable(null);
+  };
+
+  const handleTableClick = (table: Table) => {
+    if (table.status === 'occupied') {
+      // toggle back for now (view order not implemented yet)
+      setTables(prev => prev.map(t => t.id === table.id ? { ...t, status: 'available', currentOrderId: undefined } : t));
+    } else {
+      setOrderTable(table);
+    }
   };
 
   return (
@@ -39,16 +40,16 @@ export default function Dashboard({ restaurantName }: Props) {
 
       <div className="table-grid">
         {tables.map(table => (
-          <TableCard key={table.id} table={table} onOrder={() => handleOrder(table)} />
+          <TableCard key={table.id} table={table} onOrder={() => handleTableClick(table)} />
         ))}
       </div>
 
-      {orderModal && (
-        <NewOrderModal
-          table={orderModal}
+      {orderTable && (
+        <OrderModal
+          tableName={orderTable.name}
           customerTypes={DEFAULT_CUSTOMER_TYPES}
-          onStart={startOrder}
-          onClose={() => setOrderModal(null)}
+          onConfirm={(_channel, _items) => handleConfirmOrder(orderTable.id)}
+          onClose={() => setOrderTable(null)}
         />
       )}
     </div>
@@ -75,55 +76,6 @@ function TableCard({ table, onOrder }: { table: Table; onOrder: () => void }) {
       <button className="btn-primary table-order-btn" onClick={onOrder}>
         <CartIcon /> {isOccupied ? 'View Order' : 'Order'}
       </button>
-    </div>
-  );
-}
-
-function NewOrderModal({ table, customerTypes, onStart, onClose }: {
-  table: Table;
-  customerTypes: OrderChannel[];
-  onStart: (tableId: string, channel: OrderChannel) => void;
-  onClose: () => void;
-}) {
-  const [selected, setSelected] = useState<OrderChannel | null>(null);
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-panel" style={{ maxWidth: 340 }} onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>New Order — {table.name}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </div>
-        <div className="form-body">
-          <label className="field-label">Select Customer Type</label>
-          <div className="ctype-select-grid">
-            {customerTypes.map(ch => (
-              <button
-                key={ch}
-                className={`ctype-select-btn ${selected === ch ? 'ctype-selected' : ''}`}
-                style={{ borderColor: selected === ch ? 'var(--amber)' : 'var(--border)' }}
-                onClick={() => setSelected(ch)}
-              >
-                <span className="ctype-dot" style={{ background: CHANNEL_COLORS[ch] }} />
-                {ch}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="modal-footer">
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-ghost" onClick={onClose}>Cancel</button>
-            <button
-              className="btn-primary"
-              style={{ flex: 1, opacity: selected ? 1 : 0.45 }}
-              disabled={!selected}
-              onClick={() => selected && onStart(table.id, selected)}
-            >
-              Start Order
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
