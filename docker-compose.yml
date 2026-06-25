@@ -1,49 +1,55 @@
 version: '3.9'
 
 services:
-  # ── MySQL ────────────────────────────────────────────────────
+  # ── MySQL 8.0 ────────────────────────────────────────────────
   db:
     image: mysql:8.0
     container_name: mastrflow_db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret}
-      MYSQL_DATABASE: mastrflow
-      MYSQL_USER: ${MYSQL_USER:-mastrflow}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mastrflow_pass}
+      MYSQL_DATABASE:      mastrflow
+      MYSQL_USER:          ${MYSQL_USER:-mastrflow}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-mastrflow_pass}
     ports:
       - '3306:3306'
     volumes:
       - db_data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/mastrflow.cnf:ro
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p${MYSQL_ROOT_PASSWORD:-root_secret}']
-      interval: 10s
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1',
+             '-u', 'root', '-p${MYSQL_ROOT_PASSWORD:-root_secret}']
+      interval: 5s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 12
+      start_period: 20s
 
-  # ── API Server (Node.js) ─────────────────────────────────────
+  # ── API Node.js — puerto 4000 ────────────────────────────────
   api:
     build:
-      context: ./server
+      context:    ./server
       dockerfile: Dockerfile
-    container_name: mastrflow_api
-    restart: unless-stopped
+      target:     production
+    image:           mastrflow_api:latest
+    container_name:  mastrflow_api
+    restart:         unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      NODE_ENV: production
-      PORT: 4000
-      DB_HOST: db
-      DB_PORT: 3310
-      DB_NAME: mastrflow
-      DB_USER: ${MYSQL_USER:-mastrflow}
-      DB_PASS: ${MYSQL_PASSWORD:-mastrflow_pass}
-      JWT_SECRET: ${JWT_SECRET:-change_this_in_production}
+      NODE_ENV:    production
+      PORT:        4000
+      DB_HOST:     db
+      DB_PORT:     3306
+      DB_NAME:     mastrflow
+      DB_USER:     ${MYSQL_USER:-mastrflow}
+      DB_PASS:     ${MYSQL_PASSWORD:-mastrflow_pass}
+      JWT_SECRET:  ${JWT_SECRET:-change_this_in_production_use_a_long_random_key}
       JWT_EXPIRES_IN: 8h
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:1420}
     ports:
@@ -53,4 +59,6 @@ services:
 
 volumes:
   db_data:
+    name: mastrflow_db_data
   uploads:
+    name: mastrflow_uploads
