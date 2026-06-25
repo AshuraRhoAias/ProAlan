@@ -26,6 +26,7 @@ dist-ssr
 .claude/
 
 /src-tauri/target/
+/src-tauri/gen/
 **/target/
 /imgref
 
