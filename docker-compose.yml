@@ -39,7 +39,7 @@ services:
       NODE_ENV: production
       PORT: 4000
       DB_HOST: db
-      DB_PORT: 3306
+      DB_PORT: 3310
       DB_NAME: mastrflow
       DB_USER: ${MYSQL_USER:-mastrflow}
       DB_PASS: ${MYSQL_PASSWORD:-mastrflow_pass}
