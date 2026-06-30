@@ -1,69 +1,52 @@
 import { useState, useEffect } from 'react';
-import type { User } from '../types';
-import { apiFetch, ApiError, getToken, setToken, clearToken } from '../lib/api';
+import { authApi } from '../services/api';
 
 const SESSION_KEY = 'mastrflow_session';
+const TOKEN_KEY   = 'mastrflow_token';
 
-interface LoginResponse {
-  token: string;
-  user: { id: number; name: string; role: User['role'] };
+export interface User {
+  id: string;
+  name: string;
+  role: string;
+  restaurant: string;
 }
 
-interface RestaurantResponse {
-  name: string;
+function storedUser(): User | null {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null'); } catch { return null; }
 }
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem(SESSION_KEY);
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [error, setError] = useState('');
+  const [user, setUser]       = useState<User | null>(storedUser);
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
 
-  // Si hay un token guardado pero la sesion local se perdio, intenta restaurarla
+  // Validate token on mount
   useEffect(() => {
-    if (user || !getToken()) return;
-    apiFetch<{ id: number; name: string; role: User['role'] }>('/auth/me')
-      .then(me => {
-        const u: User = { id: String(me.id), name: me.name, role: me.role, restaurant: '' };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-        setUser(u);
-      })
-      .catch(() => clearToken());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token && !storedUser()) {
+      authApi.me()
+        .then(u => {
+          const full: User = { id: String(u.id), name: u.name, role: u.role, restaurant: 'MastrFlow' };
+          localStorage.setItem(SESSION_KEY, JSON.stringify(full));
+          setUser(full);
+        })
+        .catch(() => logout());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (pin: string): Promise<boolean> => {
-    setError('');
+  const login = async (name: string, pin: string): Promise<boolean> => {
     setLoading(true);
+    setAuthError('');
     try {
-      const { token, user: apiUser } = await apiFetch<LoginResponse>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ pin }),
-      });
-      setToken(token);
-
-      let restaurantName = 'My Restaurant';
-      try {
-        const restaurant = await apiFetch<RestaurantResponse>('/restaurant');
-        restaurantName = restaurant?.name ?? restaurantName;
-      } catch {
-        // No bloquea el login si falla esta llamada secundaria
-      }
-
-      const u: User = {
-        id: String(apiUser.id),
-        name: apiUser.name,
-        role: apiUser.role,
-        restaurant: restaurantName,
-      };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-      setUser(u);
+      const res = await authApi.login(name, pin);
+      localStorage.setItem(TOKEN_KEY, res.token);
+      const full: User = { id: String(res.user.id), name: res.user.name, role: res.user.role, restaurant: 'MastrFlow' };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(full));
+      setUser(full);
       return true;
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor');
-      clearToken();
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : 'Error de conexión con el servidor');
       return false;
     } finally {
       setLoading(false);
@@ -71,12 +54,12 @@ export function useAuth() {
   };
 
   const logout = () => {
-    clearToken();
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(TOKEN_KEY);
     setUser(null);
   };
 
-  return { user, login, logout, error, loading };
+  return { user, login, logout, loading, authError };
 }
 
 export function useClock() {
@@ -85,5 +68,5 @@ export function useClock() {
     const id = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-  return time.toLocaleTimeString('en-US', { hour12: false });
+  return time.toLocaleTimeString('es-MX', { hour12: false });
 }

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { useAuth, type User } from './hooks/useAuth';
+import { NotificationProvider } from './context/NotificationContext';
 import TopBar from './components/TopBar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -7,7 +8,7 @@ import Kitchen from './pages/Kitchen';
 import Settings from './pages/Settings';
 
 function ProtectedLayout({ user, onLogout }: {
-  user: NonNullable<ReturnType<typeof useAuth>['user']>;
+  user: User;
   onLogout: () => void;
 }) {
   return (
@@ -16,9 +17,9 @@ function ProtectedLayout({ user, onLogout }: {
       <main className="app-main">
         <Routes>
           <Route path="/dashboard" element={<Dashboard restaurantName={user.restaurant} />} />
-          <Route path="/kitchen" element={<Kitchen />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/kitchen"   element={<Kitchen />} />
+          <Route path="/settings"  element={<Settings />} />
+          <Route path="*"          element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
     </div>
@@ -26,15 +27,17 @@ function ProtectedLayout({ user, onLogout }: {
 }
 
 export default function App() {
-  const { user, login, logout } = useAuth();
+  const { user, login, logout, loading, authError } = useAuth();
 
   return (
     <BrowserRouter>
-      {user ? (
-        <ProtectedLayout user={user} onLogout={logout} />
-      ) : (
-        <Login onLogin={login} />
-      )}
+      <NotificationProvider>
+        {user ? (
+          <ProtectedLayout user={user} onLogout={logout} />
+        ) : (
+          <Login onLogin={login} loading={loading} serverError={authError} />
+        )}
+      </NotificationProvider>
     </BrowserRouter>
   );
 }
