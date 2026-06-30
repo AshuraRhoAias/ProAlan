@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS orders (
   payment_method   VARCHAR(20),
   notes            TEXT,
   total            DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  tip              DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   cancelled_value  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   started_at       DATETIME,

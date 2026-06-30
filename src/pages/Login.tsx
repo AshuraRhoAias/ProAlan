@@ -1,22 +1,27 @@
 import { useState } from 'react';
 
 interface Props {
-  onLogin: (pin: string) => Promise<boolean>;
+  onLogin: (name: string, pin: string) => Promise<boolean>;
+  loading?: boolean;
+  serverError?: string;
 }
 
-export default function Login({ onLogin }: Props) {
-  const [pin, setPin] = useState('');
+export default function Login({ onLogin, loading = false, serverError = '' }: Props) {
+  const [name, setName]   = useState('');
+  const [pin, setPin]     = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    const ok = await onLogin(pin);
-    if (!ok) setError('PIN invalido. Verifica e intenta de nuevo.');
-    setLoading(false);
+    if (!name.trim()) { setError('Ingresa tu usuario'); return; }
+    if (!pin)         { setError('Ingresa tu PIN'); return; }
+    const ok = await onLogin(name.trim(), pin);
+    if (!ok) setError(serverError || 'Usuario o PIN incorrecto');
   };
+
+  const pressPin = (v: string) => setPin(p => p.length < 4 ? p + v : p);
+  const delPin   = ()          => setPin(p => p.slice(0, -1));
 
   return (
     <div className="login-bg">
@@ -32,27 +37,45 @@ export default function Login({ onLogin }: Props) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="field-group">
-            <label className="field-label">PIN</label>
+            <label className="field-label">Usuario</label>
             <input
               className="field-input"
-              type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={pin}
-              onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
-              placeholder="****"
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Nombre de usuario"
               autoFocus
-              required
+              autoComplete="username"
             />
           </div>
-          {error && <p className="login-error">{error}</p>}
-          <button className="btn-primary w-full" type="submit" disabled={loading || pin.length < 4}>
-            {loading ? 'Signing in...' : 'Sign In'}
+
+          <div className="field-group">
+            <label className="field-label">PIN</label>
+            <div className="pin-display">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <span key={i} className={`pin-dot ${i < pin.length ? 'pin-dot-filled' : ''}`} />
+              ))}
+            </div>
+            <div className="pin-grid">
+              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k, i) => (
+                <button
+                  key={i} type="button"
+                  className={`pin-key${k === '' ? ' pin-key-empty' : ''}`}
+                  onClick={() => k === '⌫' ? delPin() : k !== '' ? pressPin(k) : undefined}
+                  disabled={k === '' || loading}
+                >{k}</button>
+              ))}
+            </div>
+          </div>
+
+          {(error || serverError) && <p className="login-error">{error || serverError}</p>}
+
+          <button className="btn-primary w-full" type="submit" disabled={loading || !name || !pin}>
+            {loading ? 'Verificando…' : 'Ingresar'}
           </button>
         </form>
 
-        <p className="login-hint">MastrFlow v1.0 - Powered by Tauri</p>
+        <p className="login-hint">MastrFlow v1.0 · Powered by Tauri</p>
       </div>
     </div>
   );

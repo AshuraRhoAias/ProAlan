@@ -1,10 +1,7 @@
-import { useState, useMemo } from 'react';
-import { MOCK_MENU_ITEMS } from '../../data/mockData';
-import type { MenuItem, OrderChannel } from '../../types';
+import { useState, useMemo, useEffect } from 'react';
+import { menuApi, ordersApi, type ApiMenuItem, type ApiCustomerType } from '../../services/api';
 
-const CHANNEL_COLORS: Record<string, string> = {
-  DIRECT: '#6b7280', DIDI: '#f59e0b', UBER: '#10b981', RAPPI: '#ef4444', 'MOB+': '#8b5cf6',
-};
+type MenuItem = { id: string; name: string; category: string; price: number; description?: string; allergens: string[]; available: boolean; };
 
 // Default modifiers per category — in a real app these come from the menu item
 const DEFAULT_MODIFIERS: Record<string, string[]> = {
@@ -24,29 +21,51 @@ interface CartItem {
 
 interface Props {
   tableName: string;
-  customerTypes: OrderChannel[];
-  onConfirm: (channel: OrderChannel, items: CartItem[]) => void;
+  tableId: number;
+  customerTypes: ApiCustomerType[];
+  shiftId?: number;
+  onConfirm: () => void;
   onClose: () => void;
 }
 
 type Step = 'type' | 'menu';
 
-export default function OrderModal({ tableName, customerTypes, onConfirm, onClose }: Props) {
+export default function OrderModal({ tableName, tableId, customerTypes, shiftId, onConfirm, onClose }: Props) {
   const [step, setStep] = useState<Step>('type');
-  const [channel, setChannel] = useState<OrderChannel | null>(null);
+  const [selectedType, setSelectedType] = useState<ApiCustomerType | null>(null);
   const [catFilter, setCatFilter] = useState('All');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customizing, setCustomizing] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
+  const [apiMenuItems, setApiMenuItems] = useState<ApiMenuItem[]>([]);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
 
-  const categories = useMemo(() => {
-    const cats = [...new Set(MOCK_MENU_ITEMS.map(i => i.category))];
-    return ['All', ...cats];
+  useEffect(() => {
+    menuApi.getItems().then(items => setApiMenuItems(items)).catch(() => {});
   }, []);
 
+  // Convert API items to local MenuItem shape
+  const menuItems: MenuItem[] = apiMenuItems
+    .filter(m => m.available)
+    .map(m => ({
+      id: String(m.id),
+      name: m.name,
+      category: m.category_name,
+      price: m.price,
+      description: m.description,
+      allergens: m.allergens ? m.allergens.split('||') : [],
+      available: true,
+    }));
+
+  const categories = useMemo(() => {
+    const cats = [...new Set(menuItems.map(i => i.category))];
+    return ['All', ...cats];
+  }, [menuItems]);
+
   const filtered = catFilter === 'All'
-    ? MOCK_MENU_ITEMS.filter(i => i.available)
-    : MOCK_MENU_ITEMS.filter(i => i.category === catFilter && i.available);
+    ? menuItems
+    : menuItems.filter(i => i.category === catFilter);
 
   const cartTotal = cart.reduce((sum, ci) => sum + ci.menuItem.price * ci.quantity, 0);
   const cartCount = cart.reduce((sum, ci) => sum + ci.quantity, 0);
@@ -80,8 +99,31 @@ export default function OrderModal({ tableName, customerTypes, onConfirm, onClos
     });
   };
 
-  const handleConfirm = () => {
-    if (channel && cart.length > 0) onConfirm(channel, cart);
+  const handleConfirm = async () => {
+    if (!selectedType || !cart.length) return;
+    setSending(true);
+    setSendError('');
+    try {
+      await ordersApi.create({
+        table_id: tableId,
+        customer_type_id: selectedType.id,
+        shift_id: shiftId,
+        items: cart.map(ci => ({
+          menu_item_id: Number(ci.menuItem.id),
+          quantity: ci.quantity,
+          unit_price: ci.menuItem.price,
+          notes: ci.notes,
+          modifiers: [
+            ...ci.modifiers.map(m => ({ name: m, type: 'extra' as const })),
+            ...ci.removedModifiers.map(m => ({ name: m, type: 'removed' as const })),
+          ],
+        })),
+      });
+      onConfirm();
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : 'Error al enviar orden');
+      setSending(false);
+    }
   };
 
   // ── Step 1: choose customer type ──
@@ -90,36 +132,36 @@ export default function OrderModal({ tableName, customerTypes, onConfirm, onClos
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-panel" style={{ maxWidth: 340 }} onClick={e => e.stopPropagation()}>
           <div className="modal-header">
-            <h2>New Order — {tableName}</h2>
+            <h2>Nueva Orden — {tableName}</h2>
             <button className="modal-close" onClick={onClose}>×</button>
           </div>
           <div className="form-body">
-            <label className="field-label">Select Customer Type</label>
+            <label className="field-label">Tipo de cliente</label>
             <div className="ctype-select-grid">
-              {customerTypes.map(ch => (
+              {customerTypes.map(ct => (
                 <button
-                  key={ch}
-                  className={`ctype-select-btn ${channel === ch ? 'ctype-selected' : ''}`}
-                  style={{ borderColor: channel === ch ? 'var(--amber)' : 'var(--border)' }}
-                  onClick={() => setChannel(ch)}
+                  key={ct.id}
+                  className={`ctype-select-btn ${selectedType?.id === ct.id ? 'ctype-selected' : ''}`}
+                  style={{ borderColor: selectedType?.id === ct.id ? 'var(--amber)' : 'var(--border)' }}
+                  onClick={() => setSelectedType(ct)}
                 >
-                  <span className="ctype-dot" style={{ background: CHANNEL_COLORS[ch] }} />
-                  {ch}
-                  {channel === ch && <span style={{ marginLeft: 'auto', color: 'var(--amber)' }}>✓</span>}
+                  <span className="ctype-dot" style={{ background: ct.color }} />
+                  {ct.name}
+                  {selectedType?.id === ct.id && <span style={{ marginLeft: 'auto', color: 'var(--amber)' }}>✓</span>}
                 </button>
               ))}
             </div>
           </div>
           <div className="modal-footer">
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn-ghost" onClick={onClose}>Cancel</button>
+              <button className="btn-ghost" onClick={onClose}>Cancelar</button>
               <button
                 className="btn-primary"
-                style={{ flex: 1, opacity: channel ? 1 : 0.45 }}
-                disabled={!channel}
-                onClick={() => channel && setStep('menu')}
+                style={{ flex: 1, opacity: selectedType ? 1 : 0.45 }}
+                disabled={!selectedType}
+                onClick={() => selectedType && setStep('menu')}
               >
-                Continue →
+                Continuar →
               </button>
             </div>
           </div>
@@ -139,7 +181,7 @@ export default function OrderModal({ tableName, customerTypes, onConfirm, onClos
               <button className="back-btn" style={{ padding: 0 }} onClick={() => setStep('type')}>←</button>
               <div>
                 <h2 style={{ margin: 0, fontSize: 16 }}>{tableName}</h2>
-                <span className="channel-tag" style={{ borderColor: CHANNEL_COLORS[channel!], fontSize: 11 }}>{channel}</span>
+                <span className="channel-tag" style={{ borderColor: selectedType?.color ?? 'var(--border)', fontSize: 11 }}>{selectedType?.name}</span>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -211,11 +253,12 @@ export default function OrderModal({ tableName, customerTypes, onConfirm, onClos
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                 {cartCount} item{cartCount !== 1 ? 's' : ''} · ${cartTotal.toFixed(2)}
               </div>
-              <button className="btn-primary" onClick={handleConfirm} style={{ minWidth: 140 }}>
-                Send to Kitchen
+              <button className="btn-primary" onClick={handleConfirm} disabled={sending} style={{ minWidth: 140 }}>
+                {sending ? 'Enviando…' : 'Enviar a Cocina'}
               </button>
             </div>
           )}
+          {sendError && <p style={{ color: 'var(--red, #ef4444)', padding: '4px 16px', fontSize: 13 }}>{sendError}</p>}
         </div>
       </div>
 
@@ -428,7 +471,7 @@ function CartDrawer({ cart, total, onRemove, onClose, onConfirm }: {
             <span className="cart-total-val">${total.toFixed(2)}</span>
           </div>
           <button className="btn-primary w-full" style={{ marginTop: 10 }} onClick={onConfirm}>
-            Send to Kitchen
+            Enviar a Cocina
           </button>
         </div>
       </div>
