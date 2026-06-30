@@ -1,24 +1,21 @@
 import { useState } from 'react';
 
 interface Props {
-  onLogin: (username: string, password: string) => boolean;
+  onLogin: (pin: string) => Promise<boolean>;
 }
 
 export default function Login({ onLogin }: Props) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      const ok = onLogin(username, password);
-      if (!ok) setError('Invalid credentials. Try any username with 4+ char password.');
-      setLoading(false);
-    }, 600);
+    const ok = await onLogin(pin);
+    if (!ok) setError('PIN invalido. Verifica e intenta de nuevo.');
+    setLoading(false);
   };
 
   return (
@@ -35,35 +32,27 @@ export default function Login({ onLogin }: Props) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="field-group">
-            <label className="field-label">Username</label>
+            <label className="field-label">PIN</label>
             <input
               className="field-input"
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              value={pin}
+              onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+              placeholder="****"
               autoFocus
               required
             />
           </div>
-          <div className="field-group">
-            <label className="field-label">Password</label>
-            <input
-              className="field-input"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
           {error && <p className="login-error">{error}</p>}
-          <button className="btn-primary w-full" type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+          <button className="btn-primary w-full" type="submit" disabled={loading || pin.length < 4}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <p className="login-hint">MastrFlow v1.0 · Powered by Tauri</p>
+        <p className="login-hint">MastrFlow v1.0 - Powered by Tauri</p>
       </div>
     </div>
   );
