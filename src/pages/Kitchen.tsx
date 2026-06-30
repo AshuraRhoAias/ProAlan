@@ -1,28 +1,61 @@
-import { useState, useEffect } from 'react';
-import { MOCK_ORDERS, MOCK_KITCHEN_TIMERS } from '../data/mockData';
-import type { Order, KDSTab, KitchenTimer } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import { MOCK_KITCHEN_TIMERS } from '../data/mockData';
+import { ordersApi, createEventSource, type ApiOrder } from '../services/api';
+import type { KDSTab, KitchenTimer } from '../types';
+
+// Map server order shape to a simple local shape for KDS
+type KDSOrder = {
+  id: number; code: string; tableName: string; status: string;
+  createdAt: string;
+  items: { id: number; name: string; qty: number; notes: string }[];
+};
+
+function toKDS(o: ApiOrder): KDSOrder {
+  return {
+    id: o.id, code: o.code, tableName: o.table_name, status: o.status,
+    createdAt: o.created_at,
+    items: (o.items ?? []).map(i => ({ id: i.id, name: i.menu_item_name, qty: i.quantity, notes: i.notes })),
+  };
+}
 
 export default function Kitchen() {
-  const [tab, setTab] = useState<KDSTab>('waiting');
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [tab, setTab]           = useState<KDSTab>('waiting');
+  const [orders, setOrders]     = useState<KDSOrder[]>([]);
   const [showTimers, setShowTimers] = useState(false);
-  const [timers, setTimers] = useState<KitchenTimer[]>(MOCK_KITCHEN_TIMERS);
+  const [timers, setTimers]     = useState<KitchenTimer[]>(MOCK_KITCHEN_TIMERS);
+
+  const load = useCallback(async () => {
+    const active = await ordersApi.getAll().catch(() => [] as ApiOrder[]);
+    const detailed = await Promise.all(
+      active
+        .filter(o => ['waiting','cooking','ready'].includes(o.status))
+        .map(o => ordersApi.getById(o.id).catch(() => o as ApiOrder))
+    );
+    setOrders(detailed.map(toKDS));
+  }, []);
+
+  useEffect(() => {
+    load();
+    const es = createEventSource((type) => {
+      if (type === 'order_new' || type === 'order_status') load();
+    });
+    return () => es.close();
+  }, [load]);
 
   const waiting = orders.filter(o => o.status === 'waiting');
   const cooking = orders.filter(o => o.status === 'cooking');
-  const ready = orders.filter(o => o.status === 'ready');
+  const ready   = orders.filter(o => o.status === 'ready');
 
-  const moveToNext = (orderId: string) => {
-    setOrders(prev => prev.map(o => {
-      if (o.id !== orderId) return o;
-      if (o.status === 'waiting') return { ...o, status: 'cooking', startedAt: new Date() };
-      if (o.status === 'cooking') return { ...o, status: 'ready', readyAt: new Date() };
-      if (o.status === 'ready') {
-        setTimeout(() => setOrders(p => p.filter(x => x.id !== orderId)), 800);
-        return { ...o, status: 'closed', closedAt: new Date() };
-      }
-      return o;
-    }));
+  const moveToNext = async (orderId: number) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const next = order.status === 'waiting' ? 'cooking' : order.status === 'cooking' ? 'ready' : 'closed';
+    await ordersApi.updateStatus(orderId, next).catch(() => {});
+    if (next === 'closed') {
+      setOrders(p => p.filter(o => o.id !== orderId));
+    } else {
+      setOrders(p => p.map(o => o.id === orderId ? { ...o, status: next } : o));
+    }
   };
 
   const currentOrders = tab === 'waiting' ? waiting : tab === 'cooking' ? cooking : ready;
@@ -89,9 +122,9 @@ export default function Kitchen() {
 }
 
 function OrderCard({ order, actionLabel, onAction, variant, showCheckboxes }: {
-  order: Order;
+  order: KDSOrder;
   actionLabel: string;
-  onAction: (id: string) => void;
+  onAction: (id: number) => void;
   variant?: 'cooking' | 'ready';
   showCheckboxes?: boolean;
 }) {
@@ -116,13 +149,12 @@ function OrderCard({ order, actionLabel, onAction, variant, showCheckboxes }: {
   return (
     <div className={`order-card ${variant || ''}`}>
       <div className="order-card-header">
-        <span className="order-table">{order.tableName}</span>
+        <span className="order-table">{order.tableName} <small>#{order.code}</small></span>
         <span className="order-timer">⏱ {pad(mins)}:{pad(secs)}</span>
       </div>
 
       {order.items.map((item, i) => (
-        <div key={i} className="order-item-block">
-          <div className="order-item-category">{item.category}</div>
+        <div key={item.id} className="order-item-block">
           {showCheckboxes ? (
             <label className="checkbox-item" style={{ cursor: 'pointer' }}>
               <input
@@ -131,18 +163,12 @@ function OrderCard({ order, actionLabel, onAction, variant, showCheckboxes }: {
                 checked={!!checked[i]}
                 onChange={() => toggleCheck(i)}
               />
-              <span className="order-item-name">{item.quantity}× {item.name}</span>
+              <span className="order-item-name">{item.qty}× {item.name}</span>
             </label>
           ) : (
-            <div className="order-item-name">{item.quantity}× {item.name}</div>
+            <div className="order-item-name">{item.qty}× {item.name}</div>
           )}
-          {item.modifiers.length > 0 && (
-            <div className="order-modifiers">
-              {item.modifiers.map(m => (
-                <span key={m} className="modifier-tag">✓ {m}</span>
-              ))}
-            </div>
-          )}
+          {item.notes && <div className="order-item-notes">📝 {item.notes}</div>}
         </div>
       ))}
 

@@ -6,7 +6,7 @@ export interface OrderRow extends RowDataPacket {
   customer_type_id: number; customer_type_name: string;
   shift_id: number; status: string;
   payment_method: string; notes: string;
-  total: number; cancelled_value: number;
+  total: number; tip: number; cancelled_value: number;
   created_at: Date; started_at: Date; ready_at: Date; closed_at: Date;
 }
 
@@ -123,4 +123,38 @@ export const OrderModel = {
       ORDER BY o.created_at DESC
       LIMIT 50
     `, [`%${q}%`, `%${q}%`, `%${q}%`]),
+
+  addItems: async (
+    orderId: number,
+    items: Array<{
+      menu_item_id: number; quantity: number; unit_price: number; notes?: string;
+      modifiers?: Array<{ name: string; type: 'included' | 'removed' | 'extra' }>;
+    }>
+  ) => {
+    const addedTotal = items.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+    for (const item of items) {
+      const [r] = await db.query<ResultSetHeader>(
+        'INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price, notes) VALUES (?, ?, ?, ?, ?)',
+        [orderId, item.menu_item_id, item.quantity, item.unit_price, item.notes ?? '']
+      );
+      if (item.modifiers?.length) {
+        const vals = item.modifiers.map(m => [r.insertId, m.name, m.type]);
+        await db.query('INSERT INTO order_item_modifiers (order_item_id, name, type) VALUES ?', [vals]);
+      }
+    }
+    await db.query('UPDATE orders SET total = total + ? WHERE id = ?', [addedTotal, orderId]);
+  },
+
+  closeWithTip: async (id: number, tip: number, paymentMethod: string) => {
+    await db.query<ResultSetHeader>(
+      `UPDATE orders SET status = 'closed', closed_at = NOW(),
+       tip = ?, payment_method = ?, total = total + ?
+       WHERE id = ?`,
+      [tip, paymentMethod, tip, id]
+    );
+    const [rows] = await db.query<OrderRow[]>('SELECT table_id FROM orders WHERE id = ?', [id]);
+    if (rows[0]) {
+      await db.query('UPDATE tables_restaurant SET status = ? WHERE id = ?', ['available', rows[0].table_id]);
+    }
+  },
 };
