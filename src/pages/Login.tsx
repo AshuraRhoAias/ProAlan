@@ -1,25 +1,27 @@
 import { useState } from 'react';
 
 interface Props {
-  onLogin: (username: string, password: string) => boolean;
+  onLogin: (name: string, pin: string) => Promise<boolean>;
+  loading?: boolean;
+  serverError?: string;
 }
 
-export default function Login({ onLogin }: Props) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+export default function Login({ onLogin, loading = false, serverError = '' }: Props) {
+  const [name, setName]   = useState('');
+  const [pin, setPin]     = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-    setTimeout(() => {
-      const ok = onLogin(username, password);
-      if (!ok) setError('Invalid credentials. Try any username with 4+ char password.');
-      setLoading(false);
-    }, 600);
+    if (!name.trim()) { setError('Ingresa tu usuario'); return; }
+    if (!pin)         { setError('Ingresa tu PIN'); return; }
+    const ok = await onLogin(name.trim(), pin);
+    if (!ok) setError(serverError || 'Usuario o PIN incorrecto');
   };
+
+  const pressPin = (v: string) => setPin(p => p.length < 4 ? p + v : p);
+  const delPin   = ()          => setPin(p => p.slice(0, -1));
 
   return (
     <div className="login-bg">
@@ -35,31 +37,41 @@ export default function Login({ onLogin }: Props) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="field-group">
-            <label className="field-label">Username</label>
+            <label className="field-label">Usuario</label>
             <input
               className="field-input"
               type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Nombre de usuario"
               autoFocus
-              required
+              autoComplete="username"
             />
           </div>
+
           <div className="field-group">
-            <label className="field-label">Password</label>
-            <input
-              className="field-input"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+            <label className="field-label">PIN</label>
+            <div className="pin-display">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <span key={i} className={`pin-dot ${i < pin.length ? 'pin-dot-filled' : ''}`} />
+              ))}
+            </div>
+            <div className="pin-grid">
+              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k, i) => (
+                <button
+                  key={i} type="button"
+                  className={`pin-key${k === '' ? ' pin-key-empty' : ''}`}
+                  onClick={() => k === '⌫' ? delPin() : k !== '' ? pressPin(k) : undefined}
+                  disabled={k === '' || loading}
+                >{k}</button>
+              ))}
+            </div>
           </div>
-          {error && <p className="login-error">{error}</p>}
-          <button className="btn-primary w-full" type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+
+          {(error || serverError) && <p className="login-error">{error || serverError}</p>}
+
+          <button className="btn-primary w-full" type="submit" disabled={loading || !name || !pin}>
+            {loading ? 'Verificando…' : 'Ingresar'}
           </button>
         </form>
 

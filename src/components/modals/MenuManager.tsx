@@ -10,7 +10,7 @@ export default function MenuManager({ onClose }: Props) {
   const [items, setItems] = useState<MenuItem[]>(MOCK_MENU_ITEMS);
   const [catFilter, setCatFilter] = useState('All');
   const [editItem, setEditItem] = useState<MenuItem | null>(null);
-  const [newItem, setNewItem] = useState(false);
+  const [newItem, setNewItem] = useState<MenuItem | null>(null);
 
   const filtered = catFilter === 'All' ? items : items.filter(i => i.category === catFilter);
 
@@ -20,7 +20,7 @@ export default function MenuManager({ onClose }: Props) {
       : [...prev, item]
     );
     setEditItem(null);
-    setNewItem(false);
+    setNewItem(null);
   };
 
   const deleteItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
@@ -43,7 +43,15 @@ export default function MenuManager({ onClose }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="icon-btn-sm">⊞ Categories</button>
-            <button className="btn-primary" onClick={() => setNewItem(true)}>+ Add Item</button>
+            <button
+              className="btn-primary"
+              onClick={() => setNewItem({
+                id: `m${crypto.randomUUID()}`, name: '', category: 'Burgers',
+                price: 0, description: '', allergens: [], available: true,
+              })}
+            >
+              + Add Item
+            </button>
           </div>
         </div>
 
@@ -66,13 +74,10 @@ export default function MenuManager({ onClose }: Props) {
 
         {(editItem || newItem) && (
           <MenuItemForm
-            item={editItem || {
-              id: `m${Date.now()}`, name: '', category: 'Burgers',
-              price: 0, description: '', allergens: [], available: true
-            }}
-            isNew={newItem}
+            item={editItem ?? newItem!}
+            isNew={!!newItem}
             onSave={saveItem}
-            onCancel={() => { setEditItem(null); setNewItem(false); }}
+            onCancel={() => { setEditItem(null); setNewItem(null); }}
           />
         )}
       </div>

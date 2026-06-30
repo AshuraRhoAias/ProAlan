@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { OrderModel } from '../models/Order.js';
+import { emit } from '../services/events.js';
 
 export const getOrders = async (req: Request, res: Response) => {
   const status = req.query.status as string | undefined;
@@ -25,19 +26,31 @@ export const createOrder = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'table_id, customer_type_id e items son requeridos' });
   }
   const result = await OrderModel.create({ table_id, customer_type_id, shift_id, notes, items: items as never });
+
+  // Notificar a kitchen y dashboard
+  const [rows] = await OrderModel.getById(result.orderId);
+  if (rows[0]) emit('order_new', rows[0]);
+
   res.status(201).json(result);
 };
 
 export const updateOrderStatus = async (req: Request, res: Response) => {
   const { status } = req.body as { status?: string };
   if (!status) return res.status(400).json({ error: 'status requerido' });
-  await OrderModel.updateStatus(Number(req.params.id), status);
+  const id = Number(req.params.id);
+  await OrderModel.updateStatus(id, status);
+
+  const [rows] = await OrderModel.getById(id);
+  if (rows[0]) emit('order_status', rows[0]);
+
   res.json({ ok: true });
 };
 
 export const cancelOrder = async (req: Request, res: Response) => {
   const { cancelled_value } = req.body as { cancelled_value?: number };
-  await OrderModel.cancel(Number(req.params.id), cancelled_value ?? 0);
+  const id = Number(req.params.id);
+  await OrderModel.cancel(id, cancelled_value ?? 0);
+  emit('order_status', { id, status: 'cancelled' });
   res.json({ ok: true });
 };
 
@@ -46,4 +59,23 @@ export const searchOrders = async (req: Request, res: Response) => {
   if (!q) return res.status(400).json({ error: 'q requerido' });
   const [rows] = await OrderModel.search(q);
   res.json(rows);
+};
+
+export const addItems = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { items } = req.body as { items?: unknown[] };
+  if (!items?.length) return res.status(400).json({ error: 'items requerido' });
+  await OrderModel.addItems(id, items as never);
+  const [rows] = await OrderModel.getById(id);
+  if (rows[0]) emit('order_status', rows[0]);
+  res.json({ ok: true });
+};
+
+export const closeWithTip = async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { tip = 0, payment_method = 'cash' } = req.body as { tip?: number; payment_method?: string };
+  await OrderModel.closeWithTip(id, tip, payment_method);
+  const [rows] = await OrderModel.getById(id);
+  if (rows[0]) emit('order_status', rows[0]);
+  res.json({ ok: true });
 };

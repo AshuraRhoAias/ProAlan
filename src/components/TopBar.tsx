@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useClock } from '../hooks/useAuth';
 import { useTheme, THEMES } from '../context/ThemeContext';
-import type { User } from '../types';
+import type { User } from '../hooks/useAuth';
 
 interface Props {
   user: User;
