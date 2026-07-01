@@ -77,16 +77,12 @@ ok('MySQL is ready');
 if (!fs.existsSync(INIT_SQL)) fail(`init.sql not found at: ${INIT_SQL}`);
 info('Running init.sql (creating tables + seeding data)…');
 
-// Copy the sql file into the container then execute it
-const cpResult = run('docker', ['cp', INIT_SQL, `${CONTAINER}:/tmp/init.sql`], { silent: true });
-if (cpResult.status !== 0) fail('Failed to copy init.sql into container.');
-
-const execResult = run(
+// Pipe init.sql via stdin — avoids copy + source issues cross-platform
+const sqlContent = fs.readFileSync(INIT_SQL);
+const execResult = spawnSync(
   'docker',
-  ['exec', '-i', CONTAINER,
-   'mysql', '-u', 'root', `--password=${DB_PASS}`, '--database', DB_NAME,
-   '-e', 'source /tmp/init.sql'],
-  { silent: false }
+  ['exec', '-i', CONTAINER, 'mysql', '-u', 'root', `--password=${DB_PASS}`],
+  { input: sqlContent, stdio: ['pipe', 'inherit', 'inherit'], shell: process.platform === 'win32' }
 );
 if (execResult.status !== 0) fail('mysql returned a non-zero exit code. Check the output above.');
 ok('Tables and seed data applied');
