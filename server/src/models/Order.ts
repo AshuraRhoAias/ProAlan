@@ -157,4 +157,15 @@ export const OrderModel = {
       await db.query('UPDATE tables_restaurant SET status = ? WHERE id = ?', ['available', rows[0].table_id]);
     }
   },
+
+  cancelItem: async (orderId: number, itemId: number) => {
+    const [items] = await db.query<OrderItemRow[]>(
+      'SELECT quantity, unit_price FROM order_items WHERE id = ? AND order_id = ? AND status = "pending"',
+      [itemId, orderId]
+    );
+    if (!items.length) return;
+    const refund = items[0].quantity * items[0].unit_price;
+    await db.query('UPDATE order_items SET status = "cancelled" WHERE id = ?', [itemId]);
+    await db.query('UPDATE orders SET total = GREATEST(0, total - ?) WHERE id = ?', [refund, orderId]);
+  },
 };

@@ -52,6 +52,8 @@ export const ordersApi = {
   updateStatus: (id: number, status: string) => patch<{ ok: boolean }>(`/api/orders/${id}/status`, { status }),
   closeWithTip: (id: number, tip: number, payment_method: string) =>
     patch<{ ok: boolean }>(`/api/orders/${id}/close`, { tip, payment_method }),
+  cancelItem: (id: number, itemId: number) =>
+    patch<{ ok: boolean }>(`/api/orders/${id}/items/${itemId}/cancel`, {}),
   cancel:   (id: number, cancelled_value: number) =>
     patch<{ ok: boolean }>(`/api/orders/${id}/cancel`, { cancelled_value }),
   search:   (q: string) => get<ApiOrder[]>(`/api/orders/search?q=${encodeURIComponent(q)}`),
