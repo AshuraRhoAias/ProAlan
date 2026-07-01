@@ -73,7 +73,7 @@ export function createEventSource(onMessage: (type: string, data: unknown) => vo
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 export interface ApiUser        { id: number; name: string; role: string; }
-export interface ApiMenuItem    { id: number; name: string; category_name: string; price: number; description: string; allergens: string; available: number; }
+export interface ApiMenuItem    { id: number; name: string; category_name: string; price: number; description: string; allergens: string; available: number; photo_url: string; }
 export interface ApiCategory    { id: number; name: string; sort_order: number; active: number; }
 export interface ApiCustomerType{ id: number; name: string; color: string; }
 export interface ApiTable       { id: number; name: string; capacity: number; status: string; }

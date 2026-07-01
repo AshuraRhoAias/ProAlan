@@ -94,6 +94,29 @@ CREATE TABLE IF NOT EXISTS menu_items (
   FOREIGN KEY (category_id) REFERENCES menu_categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Seed menu items
+INSERT INTO menu_items (category_id, name, description, price, photo_url) VALUES
+  (1, 'Classic Burger',      'Carne angus, lechuga, jitomate, pepinillos, cebolla',  89.00, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80'),
+  (1, 'BBQ Bacon Burger',    'Carne doble, bacon, queso cheddar, salsa BBQ',         119.00,'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&q=80'),
+  (1, 'Mushroom Swiss',      'Carne angus, champiñones salteados, queso suizo',      109.00,'https://images.unsplash.com/photo-1586816001966-79b736744398?w=400&q=80'),
+  (1, 'Veggie Burger',       'Medallón de lentejas, aguacate, jitomate',              99.00,'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=400&q=80'),
+  (2, 'Papas Fritas',        'Papas crujientes con sal de mar',                       39.00,'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&q=80'),
+  (2, 'Onion Rings',         'Aros de cebolla empanizados',                           45.00,'https://images.unsplash.com/photo-1639024471283-03518883512d?w=400&q=80'),
+  (2, 'Alitas BBQ',          '8 alitas con salsa BBQ casera',                         79.00,'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=400&q=80'),
+  (3, 'Ribeye 250g',         'Corte de res con guarnición de papa',                  249.00,'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=400&q=80'),
+  (3, 'Pollo a la Parrilla', 'Pechuga marinada con ensalada y arroz',                149.00,'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80'),
+  (4, 'Refresco',            'Coca-Cola, Pepsi, Sprite 355ml',                        29.00,'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&q=80'),
+  (4, 'Agua Mineral',        'San Pellegrino 500ml',                                  35.00,'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80'),
+  (4, 'Malteada',            'Chocolate, vainilla o fresa',                           59.00,'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&q=80');
+
+INSERT INTO menu_item_allergens (menu_item_id, name) VALUES
+  (1,'Gluten'),(1,'Lacteos'),
+  (2,'Gluten'),(2,'Lacteos'),(2,'Cerdo'),
+  (3,'Gluten'),(3,'Lacteos'),
+  (5,'Gluten'),
+  (6,'Gluten'),
+  (7,'Gluten');
+
 -- ── Alérgenos / ingredientes especiales ──────────────────────
 CREATE TABLE IF NOT EXISTS menu_item_allergens (
   id           INT         UNSIGNED AUTO_INCREMENT PRIMARY KEY,
