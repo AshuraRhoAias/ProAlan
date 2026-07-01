@@ -17,17 +17,16 @@ services:
       - db_data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/mastrflow.cnf:ro
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # Solo flags validos en MySQL 8.0 — sin default-authentication-plugin ni skip-host-cache
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
-      --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1',
-             '-u', 'root', '-p${MYSQL_ROOT_PASSWORD:-root_secret}']
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "--password=root_secret"]
       interval: 5s
       timeout: 5s
-      retries: 12
-      start_period: 20s
+      retries: 15
+      start_period: 30s
 
   # ── API Node.js — puerto 4000 ────────────────────────────────
   api:
