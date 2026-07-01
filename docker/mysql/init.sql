@@ -1,6 +1,5 @@
 -- ============================================================
--- MastrFlow — Database Schema
--- Charset: utf8mb4 (soporta ñ, acentos, emojis y todo unicode)
+-- MastrFlow — Database Schema  (idempotente: seguro re-ejecutar)
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS mastrflow
@@ -21,9 +20,9 @@ CREATE TABLE IF NOT EXISTS restaurant (
   updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO restaurant (name) VALUES ('My Restaurant');
+INSERT IGNORE INTO restaurant (id, name) VALUES (1, 'My Restaurant');
 
--- ── Customer Types (DIRECT, DIDI, UBER, RAPPI, MOB+, etc.) ──
+-- ── Customer Types ───────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS customer_types (
   id         INT         UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name       VARCHAR(40) NOT NULL,
@@ -33,12 +32,12 @@ CREATE TABLE IF NOT EXISTS customer_types (
   created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO customer_types (name, color, sort_order) VALUES
-  ('DIRECT', '#6b7280', 1),
-  ('DIDI',   '#f59e0b', 2),
-  ('UBER',   '#10b981', 3),
-  ('RAPPI',  '#ef4444', 4),
-  ('MOB+',   '#8b5cf6', 5);
+INSERT IGNORE INTO customer_types (id, name, color, sort_order) VALUES
+  (1, 'DIRECT', '#6b7280', 1),
+  (2, 'DIDI',   '#f59e0b', 2),
+  (3, 'UBER',   '#10b981', 3),
+  (4, 'RAPPI',  '#ef4444', 4),
+  (5, 'MOB+',   '#8b5cf6', 5);
 
 -- ── Usuarios ─────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
@@ -51,9 +50,9 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO users (name, role, pin) VALUES
-  ('Admin', 'admin', '0000'),
-  ('Manager', 'manager', '1234');
+INSERT IGNORE INTO users (id, name, role, pin) VALUES
+  (1, 'Admin',   'admin',   '0000'),
+  (2, 'Manager', 'manager', '1234');
 
 -- ── Mesas ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS tables_restaurant (
@@ -64,9 +63,9 @@ CREATE TABLE IF NOT EXISTS tables_restaurant (
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO tables_restaurant (name, capacity) VALUES
-  ('Table 1', 4), ('Table 2', 4), ('Table 3', 4),
-  ('Table 4', 4), ('Table 5', 4), ('Table 6', 4);
+INSERT IGNORE INTO tables_restaurant (id, name, capacity) VALUES
+  (1, 'Table 1', 4), (2, 'Table 2', 4), (3, 'Table 3', 4),
+  (4, 'Table 4', 4), (5, 'Table 5', 4), (6, 'Table 6', 4);
 
 -- ── Categorías de menú ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS menu_categories (
@@ -77,8 +76,8 @@ CREATE TABLE IF NOT EXISTS menu_categories (
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO menu_categories (name, sort_order) VALUES
-  ('Burgers', 1), ('Sides', 2), ('Mains', 3), ('Drinks', 4);
+INSERT IGNORE INTO menu_categories (id, name, sort_order) VALUES
+  (1, 'Burgers', 1), (2, 'Sides', 2), (3, 'Mains', 3), (4, 'Drinks', 4);
 
 -- ── Items de menú ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS menu_items (
@@ -94,28 +93,19 @@ CREATE TABLE IF NOT EXISTS menu_items (
   FOREIGN KEY (category_id) REFERENCES menu_categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Seed menu items
-INSERT INTO menu_items (category_id, name, description, price, photo_url) VALUES
-  (1, 'Classic Burger',      'Carne angus, lechuga, jitomate, pepinillos, cebolla',  89.00, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80'),
-  (1, 'BBQ Bacon Burger',    'Carne doble, bacon, queso cheddar, salsa BBQ',         119.00,'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&q=80'),
-  (1, 'Mushroom Swiss',      'Carne angus, champiñones salteados, queso suizo',      109.00,'https://images.unsplash.com/photo-1586816001966-79b736744398?w=400&q=80'),
-  (1, 'Veggie Burger',       'Medallón de lentejas, aguacate, jitomate',              99.00,'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=400&q=80'),
-  (2, 'Papas Fritas',        'Papas crujientes con sal de mar',                       39.00,'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&q=80'),
-  (2, 'Onion Rings',         'Aros de cebolla empanizados',                           45.00,'https://images.unsplash.com/photo-1639024471283-03518883512d?w=400&q=80'),
-  (2, 'Alitas BBQ',          '8 alitas con salsa BBQ casera',                         79.00,'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=400&q=80'),
-  (3, 'Ribeye 250g',         'Corte de res con guarnición de papa',                  249.00,'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=400&q=80'),
-  (3, 'Pollo a la Parrilla', 'Pechuga marinada con ensalada y arroz',                149.00,'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80'),
-  (4, 'Refresco',            'Coca-Cola, Pepsi, Sprite 355ml',                        29.00,'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400&q=80'),
-  (4, 'Agua Mineral',        'San Pellegrino 500ml',                                  35.00,'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&q=80'),
-  (4, 'Malteada',            'Chocolate, vainilla o fresa',                           59.00,'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&q=80');
-
-INSERT INTO menu_item_allergens (menu_item_id, name) VALUES
-  (1,'Gluten'),(1,'Lacteos'),
-  (2,'Gluten'),(2,'Lacteos'),(2,'Cerdo'),
-  (3,'Gluten'),(3,'Lacteos'),
-  (5,'Gluten'),
-  (6,'Gluten'),
-  (7,'Gluten');
+INSERT IGNORE INTO menu_items (id, category_id, name, description, price, photo_url) VALUES
+  (1,  1, 'Classic Burger',    'Carne angus, lechuga, jitomate, cebolla, pepinillos artesanales',  89.00, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80'),
+  (2,  1, 'BBQ Bacon Burger',  'Doble carne, bacon ahumado, queso cheddar, salsa BBQ',            119.00, 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&q=80'),
+  (3,  1, 'Mushroom Swiss',    'Carne angus, champiñones salteados, queso suizo, mayo de ajo',    109.00, 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400&q=80'),
+  (4,  1, 'Spicy Crispy',      'Pollo crujiente picante, col morada, jalapeños, salsa sriracha',   99.00, 'https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?w=400&q=80'),
+  (5,  2, 'French Fries',      'Papas fritas crujientes con sal de mar',                           39.00, 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400&q=80'),
+  (6,  2, 'Onion Rings',       'Aros de cebolla empanizados y fritos, salsa ranch',                49.00, 'https://images.unsplash.com/photo-1639024471283-03518883512d?w=400&q=80'),
+  (7,  2, 'Loaded Fries',      'Papas con queso derretido, bacon, cebolla de cambray y crema',     59.00, 'https://images.unsplash.com/photo-1604152135912-04a022e23696?w=400&q=80'),
+  (8,  3, 'Hot Dog Smash',     'Salchicha artesanal, mostaza Dijon, cebolla caramelizada',         79.00, 'https://images.unsplash.com/photo-1612392062631-94d4d52a1f16?w=400&q=80'),
+  (9,  3, 'Mac & Cheese Dog',  'Salchicha, macarrones con queso casero, cebolla crujiente',        89.00, 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=400&q=80'),
+  (10, 4, 'Refresco',          'Coca-Cola, Sprite o Fanta (330 ml)',                               29.00, 'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?w=400&q=80'),
+  (11, 4, 'Agua Mineral',      'Agua con gas natural (500 ml)',                                    25.00, 'https://images.unsplash.com/photo-1564419320461-6870880221ad?w=400&q=80'),
+  (12, 4, 'Malteada',          'Vainilla, chocolate o fresa — hecha al momento',                   59.00, 'https://images.unsplash.com/photo-1568901839119-631418a3910d?w=400&q=80');
 
 -- ── Alérgenos / ingredientes especiales ──────────────────────
 CREATE TABLE IF NOT EXISTS menu_item_allergens (
@@ -124,6 +114,18 @@ CREATE TABLE IF NOT EXISTS menu_item_allergens (
   name         VARCHAR(80) NOT NULL,
   FOREIGN KEY (menu_item_id) REFERENCES menu_items(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO menu_item_allergens (id, menu_item_id, name) VALUES
+  (1,  1, 'Gluten'), (2,  1, 'Lácteos'),
+  (3,  2, 'Gluten'), (4,  2, 'Lácteos'),
+  (5,  3, 'Gluten'), (6,  3, 'Lácteos'),
+  (7,  4, 'Gluten'), (8,  4, 'Picante'),
+  (9,  5, 'Gluten'),
+  (10, 6, 'Gluten'),
+  (11, 7, 'Gluten'), (12, 7, 'Lácteos'),
+  (13, 8, 'Gluten'), (14, 8, 'Mostaza'),
+  (15, 9, 'Gluten'), (16, 9, 'Lácteos'),
+  (17,12, 'Lácteos');
 
 -- ── Modificadores predeterminados por categoría ──────────────
 CREATE TABLE IF NOT EXISTS category_modifiers (
@@ -134,10 +136,10 @@ CREATE TABLE IF NOT EXISTS category_modifiers (
   FOREIGN KEY (category_id) REFERENCES menu_categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO category_modifiers (category_id, name, sort_order) VALUES
-  (1,'LECHUGA',1),(1,'JITOMATE',2),(1,'MAYONESA',3),(1,'PEPINILLOS ARTESANALES',4),
-  (1,'CEBOLLA ASADA',5),(1,'MOSTAZA',6),(1,'KETCHUP',7),(1,'SALSA ESPECIAL',8),
-  (1,'QUESO EXTRA',9),(1,'BACON EXTRA',10);
+INSERT IGNORE INTO category_modifiers (id, category_id, name, sort_order) VALUES
+  (1, 1,'LECHUGA',1),(2, 1,'JITOMATE',2),(3, 1,'MAYONESA',3),(4, 1,'PEPINILLOS ARTESANALES',4),
+  (5, 1,'CEBOLLA ASADA',5),(6, 1,'MOSTAZA',6),(7, 1,'KETCHUP',7),(8, 1,'SALSA ESPECIAL',8),
+  (9, 1,'QUESO EXTRA',9),(10, 1,'BACON EXTRA',10);
 
 -- ── Turnos (shifts) ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS shifts (
@@ -174,6 +176,9 @@ CREATE TABLE IF NOT EXISTS orders (
   FOREIGN KEY (customer_type_id) REFERENCES customer_types(id),
   FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Añadir tip si la tabla ya existía sin esa columna
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tip DECIMAL(10,2) NOT NULL DEFAULT 0.00;
 
 -- ── Items de orden ───────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS order_items (
@@ -216,7 +221,13 @@ CREATE TABLE IF NOT EXISTS shopping_expenses (
   closed_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Índices útiles
+-- ── Índices (DROP IF EXISTS primero para que sea idempotente) ──
+DROP INDEX IF EXISTS idx_orders_status   ON orders;
+DROP INDEX IF EXISTS idx_orders_table    ON orders;
+DROP INDEX IF EXISTS idx_orders_shift    ON orders;
+DROP INDEX IF EXISTS idx_orders_created  ON orders;
+DROP INDEX IF EXISTS idx_order_items_ord ON order_items;
+
 CREATE INDEX idx_orders_status   ON orders(status);
 CREATE INDEX idx_orders_table    ON orders(table_id);
 CREATE INDEX idx_orders_shift    ON orders(shift_id);
