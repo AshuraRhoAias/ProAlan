@@ -14,7 +14,7 @@ function toKDS(o: ApiOrder): KDSOrder {
   return {
     id: o.id, code: o.code, tableName: o.table_name, status: o.status,
     createdAt: o.created_at,
-    items: (o.items ?? []).map(i => ({ id: i.id, name: i.menu_item_name, qty: i.quantity, notes: i.notes })),
+    items: (o.items ?? []).filter(i => i.status !== 'cancelled').map(i => ({ id: i.id, name: i.menu_item_name, qty: i.quantity, notes: i.notes })),
   };
 }
 
