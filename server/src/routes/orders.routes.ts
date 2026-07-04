@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   getOrders, getOrder, createOrder, updateOrderStatus,
-  cancelOrder, searchOrders, addItems, closeWithTip,
+  cancelOrder, searchOrders, addItems, cancelItem, closeWithTip,
 } from '../controllers/orders.controller.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -16,6 +16,7 @@ router.post('/', createOrder);
 router.patch('/:id/status', updateOrderStatus);
 router.patch('/:id/cancel', cancelOrder);
 router.post('/:id/items', addItems);
+router.patch('/:id/items/:itemId/cancel', cancelItem);
 router.patch('/:id/close', closeWithTip);
 
 export default router;

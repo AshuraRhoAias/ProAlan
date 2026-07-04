@@ -71,6 +71,15 @@ export const addItems = async (req: Request, res: Response) => {
   res.json({ ok: true });
 };
 
+export const cancelItem = async (req: Request, res: Response) => {
+  const orderId = Number(req.params.id);
+  const itemId  = Number(req.params.itemId);
+  await OrderModel.cancelItem(orderId, itemId);
+  const [rows] = await OrderModel.getById(orderId);
+  if (rows[0]) emit('order_status', rows[0]);
+  res.json({ ok: true });
+};
+
 export const closeWithTip = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   const { tip = 0, payment_method = 'cash' } = req.body as { tip?: number; payment_method?: string };

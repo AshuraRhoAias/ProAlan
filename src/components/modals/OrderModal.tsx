@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { menuApi, ordersApi, type ApiMenuItem, type ApiCustomerType } from '../../services/api';
 
-type MenuItem = { id: string; name: string; category: string; price: number; description?: string; allergens: string[]; available: boolean; };
+type MenuItem = { id: string; name: string; category: string; price: number; description?: string; allergens: string[]; available: boolean; photoUrl?: string; };
 
 // Default modifiers per category — in a real app these come from the menu item
 const DEFAULT_MODIFIERS: Record<string, string[]> = {
@@ -56,6 +56,7 @@ export default function OrderModal({ tableName, tableId, customerTypes, shiftId,
       description: m.description,
       allergens: m.allergens ? m.allergens.split('||') : [],
       available: true,
+      photoUrl: m.photo_url,
     }));
 
   const categories = useMemo(() => {
@@ -217,7 +218,9 @@ export default function OrderModal({ tableName, tableId, customerTypes, shiftId,
                   onClick={() => setCustomizing(item)}
                 >
                   <div className="menu-product-img">
-                    <span style={{ fontSize: 28 }}>🍔</span>
+                    {item.photoUrl
+                      ? <img src={item.photoUrl} alt={item.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                      : <span style={{ fontSize: 28 }}>🍽️</span>}
                   </div>
                   <div className="menu-product-body">
                     <div className="menu-product-name">{item.name}</div>
@@ -335,6 +338,11 @@ function ItemCustomizer({ item, defaultMods, onAdd, onClose }: {
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
+        {item.photoUrl && (
+          <div style={{ width: '100%', height: 160, overflow: 'hidden' }}>
+            <img src={item.photoUrl} alt={item.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          </div>
+        )}
         {item.description && (
           <p style={{ padding: '6px 20px', fontSize: 12, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
             {item.description}

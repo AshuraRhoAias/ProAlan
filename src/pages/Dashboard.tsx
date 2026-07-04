@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { restaurantApi, ordersApi, type ApiTable, type ApiCustomerType, type ApiOrder } from '../services/api';
+import { restaurantApi, ordersApi, createEventSource, type ApiTable, type ApiCustomerType, type ApiOrder } from '../services/api';
 import OrderModal from '../components/modals/OrderModal';
 import OrderDetail from '../components/modals/OrderDetail';
 
@@ -31,6 +31,14 @@ export default function Dashboard({ restaurantName }: Props) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // SSE: refresh on any order event
+  useEffect(() => {
+    const es = createEventSource((type) => {
+      if (['order_new', 'order_status'].includes(type)) load();
+    });
+    return () => es.close();
+  }, [load]);
 
   const getTableOrder = (tableId: number) =>
     activeOrders.find(o => o.table_id === tableId && ['waiting','cooking','ready'].includes(o.status));

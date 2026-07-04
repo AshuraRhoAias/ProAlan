@@ -19,6 +19,7 @@
     "tauri ios build": "tauri ios build",
     "setup": "node scripts/setup.cjs",
     "docker": "node scripts/setup.cjs",
+    "docker:create": "node scripts/docker-create.cjs",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v && node scripts/setup.cjs",
