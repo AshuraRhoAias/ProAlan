@@ -103,11 +103,16 @@ export const OrderModel = {
     }
   },
 
-  cancel: (id: number, cancelledValue: number) =>
-    db.query<ResultSetHeader>(
+  cancel: async (id: number, cancelledValue: number) => {
+    const [rows] = await db.query<OrderRow[]>('SELECT table_id FROM orders WHERE id = ?', [id]);
+    await db.query<ResultSetHeader>(
       'UPDATE orders SET status = "cancelled", cancelled_value = ?, closed_at = NOW() WHERE id = ?',
       [cancelledValue, id]
-    ),
+    );
+    if (rows[0]) {
+      await db.query('UPDATE tables_restaurant SET status = ? WHERE id = ?', ['available', rows[0].table_id]);
+    }
+  },
 
   search: (q: string) =>
     db.query<OrderRow[]>(`
@@ -148,9 +153,9 @@ export const OrderModel = {
   closeWithTip: async (id: number, tip: number, paymentMethod: string) => {
     await db.query<ResultSetHeader>(
       `UPDATE orders SET status = 'closed', closed_at = NOW(),
-       tip = ?, payment_method = ?, total = total + ?
+       tip = ?, payment_method = ?
        WHERE id = ?`,
-      [tip, paymentMethod, tip, id]
+      [tip, paymentMethod, id]
     );
     const [rows] = await db.query<OrderRow[]>('SELECT table_id FROM orders WHERE id = ?', [id]);
     if (rows[0]) {
