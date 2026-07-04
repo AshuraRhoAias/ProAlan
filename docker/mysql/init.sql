@@ -178,7 +178,19 @@ CREATE TABLE IF NOT EXISTS orders (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Añadir tip si la tabla ya existía sin esa columna
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS tip DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+-- (se ignora el error 1060 "Duplicate column" con INSERT INTO ... SELECT trick vía ALTER IGNORE no disponible;
+--  usamos SET para suprimir con IF desde information_schema)
+SET @tip_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'tip'
+);
+SET @sql_tip = IF(@tip_exists = 0,
+  'ALTER TABLE orders ADD COLUMN tip DECIMAL(10,2) NOT NULL DEFAULT 0.00',
+  'SELECT 1'
+);
+PREPARE stmt_tip FROM @sql_tip;
+EXECUTE stmt_tip;
+DEALLOCATE PREPARE stmt_tip;
 
 -- ── Items de orden ───────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS order_items (
