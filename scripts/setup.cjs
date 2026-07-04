@@ -91,24 +91,36 @@ async function waitFor(label, cmd, maxTries = 30, interval = 2000) {
   ok('MySQL listo');
 
   // ── 4. Verificar tablas ──────────────────────────────────────────────────
-  step('Verificando esquema de base de datos');
+  step('Aplicando esquema de base de datos');
+  const INIT_SQL = path.join(ROOT, 'docker', 'mysql', 'init.sql');
+  const sqlContent = fs.readFileSync(INIT_SQL);
+
+  // Pipe stdin → avoids shell redirection issues on Windows and removes
+  // the need for temp files. init.sql uses IF NOT EXISTS + INSERT IGNORE
+  // so it is always safe to re-run.
+  const sqlResult = spawnSync(
+    'docker',
+    ['compose', 'exec', '-T', 'db', 'mysql', '-u', 'root', '--password=root_secret'],
+    { input: sqlContent, stdio: ['pipe', 'pipe', 'pipe'], shell: false, cwd: ROOT }
+  );
+  if (sqlResult.status !== 0) {
+    const errMsg = (sqlResult.stderr || '').toString();
+    // Ignore "world-writable" config warning — not a real error
+    if (!errMsg.includes('World-writable') && errMsg.trim()) {
+      warn('Advertencia al aplicar init.sql: ' + errMsg.trim());
+    }
+  }
+
+  // Verify table count after applying
   const tables = runCapture(
-    `docker compose exec -T db mysql -u root -proot_secret --batch --skip-column-names` +
+    `docker compose exec -T db mysql -u root --password=root_secret --batch --skip-column-names` +
     ` -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='mastrflow';"`
   );
   const tableCount = parseInt(tables, 10) || 0;
-
   if (tableCount > 0) {
     ok(`Base de datos 'mastrflow' con ${tableCount} tablas`);
   } else {
-    warn('Aplicando init.sql manualmente…');
-    const sql = fs.readFileSync(path.join(ROOT, 'docker', 'mysql', 'init.sql'), 'utf8');
-    // Escribir a un archivo temporal y pasarlo
-    const tmpSql = path.join(ROOT, 'docker', 'mysql', '_init_tmp.sql');
-    fs.writeFileSync(tmpSql, sql);
-    run(`docker compose exec -T db mysql -u root -proot_secret mastrflow < "${tmpSql}"`);
-    try { fs.unlinkSync(tmpSql); } catch (_) {}
-    ok('Esquema aplicado');
+    warn('No se pudieron verificar las tablas — revisa: docker compose logs db');
   }
 
   // ── 5. Esperar API en :4000 ──────────────────────────────────────────────

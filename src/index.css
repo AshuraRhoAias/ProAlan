@@ -559,7 +559,43 @@ html, body, #root { height: 100%; font-family: 'Inter', system-ui, sans-serif; b
 .pay-method-active { background: var(--surface); border-color: var(--amber); color: var(--amber); }
 .od-pay-btn { width: 100%; }
 .od-cancel-link { background: transparent; border: none; color: #ef4444; font-size: 12px; cursor: pointer; padding: 8px 20px; text-decoration: underline; }
-.od-msg { padding: 4px 20px; font-size: 12px; color: #10b981; }
+.od-msg { padding: 6px 20px; font-size: 13px; font-weight: 600; border-radius: 0; }
+.od-msg-ok  { color: #10b981; }
+.od-msg-err { color: #ef4444; }
+
+/* Status pill in header */
+.od-status-pill { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
+
+/* Kitchen banner */
+.od-kitchen-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 20px; background: #f59e0b18; border-bottom: 1px solid #f59e0b44; font-size: 13px; color: var(--text-muted); }
+.od-kitchen-btn { font-size: 13px; padding: 6px 14px; min-width: unset; }
+
+/* Item info with modifiers */
+.od-item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.od-item-mods { display: flex; gap: 4px; flex-wrap: wrap; }
+.mod-removed { font-size: 10px; font-weight: 600; color: #ef4444; background: #ef444415; padding: 1px 5px; border-radius: 4px; }
+
+/* Remove button per item */
+.od-item-remove { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border);
+  background: transparent; cursor: pointer; font-size: 10px; color: #ef4444;
+  display: flex; align-items: center; justify-content: center; opacity: 0.6; }
+.od-item-remove:hover { opacity: 1; background: #ef444415; }
+
+/* Cancelled items section */
+.od-removed-section { margin-top: 8px; opacity: 0.45; }
+.od-item-cancelled { font-size: 12px; }
+
+.od-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* Add tab summary */
+.od-add-summary { text-align: right; font-size: 14px; font-weight: 700; color: var(--amber); margin-bottom: 8px; }
+.od-menu-name { font-size: 14px; font-weight: 600; }
+.od-menu-cat  { font-size: 11px; color: var(--text-muted); }
+
+/* Pay tab */
+.od-tip-section { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+.od-tip-label { font-size: 13px; color: var(--text-muted); }
 .status-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--bg); }
 .status-waiting { color: #f59e0b; }
 .status-cooking { color: #ef4444; }

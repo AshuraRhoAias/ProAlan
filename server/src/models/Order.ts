@@ -103,11 +103,16 @@ export const OrderModel = {
     }
   },
 
-  cancel: (id: number, cancelledValue: number) =>
-    db.query<ResultSetHeader>(
+  cancel: async (id: number, cancelledValue: number) => {
+    const [rows] = await db.query<OrderRow[]>('SELECT table_id FROM orders WHERE id = ?', [id]);
+    await db.query<ResultSetHeader>(
       'UPDATE orders SET status = "cancelled", cancelled_value = ?, closed_at = NOW() WHERE id = ?',
       [cancelledValue, id]
-    ),
+    );
+    if (rows[0]) {
+      await db.query('UPDATE tables_restaurant SET status = ? WHERE id = ?', ['available', rows[0].table_id]);
+    }
+  },
 
   search: (q: string) =>
     db.query<OrderRow[]>(`
@@ -148,13 +153,24 @@ export const OrderModel = {
   closeWithTip: async (id: number, tip: number, paymentMethod: string) => {
     await db.query<ResultSetHeader>(
       `UPDATE orders SET status = 'closed', closed_at = NOW(),
-       tip = ?, payment_method = ?, total = total + ?
+       tip = ?, payment_method = ?
        WHERE id = ?`,
-      [tip, paymentMethod, tip, id]
+      [tip, paymentMethod, id]
     );
     const [rows] = await db.query<OrderRow[]>('SELECT table_id FROM orders WHERE id = ?', [id]);
     if (rows[0]) {
       await db.query('UPDATE tables_restaurant SET status = ? WHERE id = ?', ['available', rows[0].table_id]);
     }
+  },
+
+  cancelItem: async (orderId: number, itemId: number) => {
+    const [items] = await db.query<OrderItemRow[]>(
+      'SELECT quantity, unit_price FROM order_items WHERE id = ? AND order_id = ? AND status = "pending"',
+      [itemId, orderId]
+    );
+    if (!items.length) return;
+    const refund = items[0].quantity * items[0].unit_price;
+    await db.query('UPDATE order_items SET status = "cancelled" WHERE id = ?', [itemId]);
+    await db.query('UPDATE orders SET total = GREATEST(0, total - ?) WHERE id = ?', [refund, orderId]);
   },
 };

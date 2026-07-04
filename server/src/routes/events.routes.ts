@@ -1,11 +1,10 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { addClient } from '../services/events.js';
-import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/', requireAuth, (req, res) => {
+router.get('/', (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
