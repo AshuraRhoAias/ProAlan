@@ -164,6 +164,28 @@ INSERT IGNORE INTO menu_items (id, category_id, name, description, price, allerg
   (13, 4, 'Malteada',            'Chocolate, vainilla o fresa',              85.00, 'lácteos',         'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400'),
   (14, 4, 'Jugo Natural',        'Naranja, mango o zanahoria',               50.00, '',                'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400');
 
+-- Actualizar foto y alérgenos en items ya existentes (INSERT IGNORE no actualiza)
+INSERT INTO menu_items (id, category_id, name, description, price, allergens, photo_url) VALUES
+  (1,  1, 'Classic Burger',      'Res 180g, lechuga, jitomate, pepinillos',      120.00, 'gluten,lácteos',  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400'),
+  (2,  1, 'Smash Burger',        'Doble smash, queso americano, salsa especial', 145.00, 'gluten,lácteos',  'https://images.unsplash.com/photo-1586816001966-79b736744398?w=400'),
+  (3,  1, 'BBQ Bacon Burger',    'Res 180g, bacon, cebolla asada, BBQ',          155.00, 'gluten,lácteos',  'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400'),
+  (4,  1, 'Veggie Burger',       'Medallón de frijol negro, aguacate',            130.00, 'gluten',          'https://images.unsplash.com/photo-1520072959219-c595dc870360?w=400'),
+  (5,  2, 'Papas a la Francesa', 'Papas crujientes con sal de mar',               55.00,  '',               'https://images.unsplash.com/photo-1576107232684-1279f390859f?w=400'),
+  (6,  2, 'Aros de Cebolla',     'Aros crujientes con aderezo ranch',             65.00, 'gluten,lácteos',  'https://images.unsplash.com/photo-1639024471283-03518883512d?w=400'),
+  (7,  2, 'Nuggets x8',          '8 piezas con salsa BBQ o ranch',                75.00, 'gluten',          'https://images.unsplash.com/photo-1562967914-608f82629710?w=400'),
+  (8,  3, 'Hot Dog Clásico',     'Salchicha ahumada, mostaza, ketchup',           80.00, 'gluten',          'https://images.unsplash.com/photo-1619740455993-9d622e5f6b68?w=400'),
+  (9,  3, 'Pizza Margarita',     'Salsa de tomate, mozzarella, albahaca',        160.00, 'gluten,lácteos',  'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400'),
+  (10, 3, 'Tacos x3',            'Pastor, cebolla, cilantro, salsa verde',        90.00, '',                'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400'),
+  (11, 4, 'Refresco',            'Coca-Cola, Sprite o Fanta 355ml',               35.00, '',                'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400'),
+  (12, 4, 'Agua Mineral',        'Con o sin gas 500ml',                           28.00, '',                'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400'),
+  (13, 4, 'Malteada',            'Chocolate, vainilla o fresa',                   85.00, 'lácteos',         'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400'),
+  (14, 4, 'Jugo Natural',        'Naranja, mango o zanahoria',                    50.00, '',                'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400')
+ON DUPLICATE KEY UPDATE
+  photo_url = VALUES(photo_url),
+  allergens = VALUES(allergens),
+  description = VALUES(description),
+  price = VALUES(price);
+
 -- ── Alérgenos ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS menu_item_allergens (
   id           INT         UNSIGNED AUTO_INCREMENT PRIMARY KEY,
