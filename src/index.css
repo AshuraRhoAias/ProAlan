@@ -57,11 +57,16 @@ html, body, #root { height: 100%; font-family: 'Inter', system-ui, sans-serif; b
 .channel-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .channel-tag { font-size: 10px; padding: 2px 7px; border-radius: 20px; border: 1px solid; color: var(--text-mid); background: transparent; font-weight: 500; }
 .table-order-btn { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.table-action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.table-action-btn { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; padding: 8px 4px; }
 
 /* Buttons */
 .btn-primary { background: var(--amber); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
 .btn-primary:hover:not(:disabled) { background: #a86e1a; }
 .btn-primary:disabled { opacity: 0.6; cursor: default; }
+.btn-secondary { background: transparent; color: var(--amber); border: 1.5px solid var(--amber); border-radius: var(--radius-sm); padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.btn-secondary:hover:not(:disabled) { background: var(--amber); color: #fff; }
+.btn-secondary:disabled { opacity: 0.5; cursor: default; }
 .btn-ghost { background: transparent; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text-mid); }
 .btn-ghost:hover { background: var(--bg); }
 .w-full { width: 100%; }

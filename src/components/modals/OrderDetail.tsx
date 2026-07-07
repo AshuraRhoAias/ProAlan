@@ -4,6 +4,7 @@ import { ordersApi, menuApi, type ApiOrder, type ApiMenuItem, type ApiOrderItem 
 interface Props {
   orderId: number;
   currencySymbol?: string;
+  initialTab?: 'items' | 'add' | 'pay';
   onClose: () => void;
   onUpdated: () => void;
 }
@@ -23,10 +24,10 @@ const PAY_LABEL: Record<PayMethod, string> = {
   cash: '💵 Efectivo', card: '💳 Tarjeta', transfer: '📲 Transferencia', app: '📱 App',
 };
 
-export default function OrderDetail({ orderId, currencySymbol = '$', onClose, onUpdated }: Props) {
+export default function OrderDetail({ orderId, currencySymbol = '$', initialTab = 'items', onClose, onUpdated }: Props) {
   const [order,     setOrder]     = useState<ApiOrder | null>(null);
   const [menuItems, setMenuItems] = useState<ApiMenuItem[]>([]);
-  const [tab,       setTab]       = useState<Tab>('items');
+  const [tab,       setTab]       = useState<Tab>(initialTab);
   const [tip,       setTip]       = useState(0);
   const [payMethod, setPayMethod] = useState<PayMethod>('cash');
   const [addQty,    setAddQty]    = useState<Record<number, number>>({});
