@@ -141,7 +141,9 @@ html, body, #root { height: 100%; font-family: 'Inter', system-ui, sans-serif; b
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.modal-panel { background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal-panel,
+.modal-box { background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.order-detail-box { max-width: 520px; }
 .modal-wide { max-width: 680px; }
 .modal-xl { max-width: 600px; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 20px 0; position: sticky; top: 0; background: var(--bg-card); z-index: 1; }
