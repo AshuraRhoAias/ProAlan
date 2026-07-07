@@ -286,17 +286,9 @@ CREATE TABLE IF NOT EXISTS shopping_items (
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ── Índices idempotentes via PREPARE/EXECUTE (MySQL 8.0) ─────
--- DROP solo si existe, CREATE solo si no existe
+-- ── Índices: CREATE solo si no existen (MySQL 8.0, sin DROP) ────
+-- No se hace DROP porque algunos índices son requeridos por FK constraints.
 
-SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_status')  > 0, 'DROP INDEX idx_orders_status  ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_table')   > 0, 'DROP INDEX idx_orders_table   ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_shift')   > 0, 'DROP INDEX idx_orders_shift   ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_created') > 0, 'DROP INDEX idx_orders_created ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='order_items' AND INDEX_NAME='idx_items_order')    > 0, 'DROP INDEX idx_items_order    ON order_items', 'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
-
-CREATE INDEX idx_orders_status  ON orders(status);
-CREATE INDEX idx_orders_table   ON orders(table_id);
-CREATE INDEX idx_orders_shift   ON orders(shift_id);
-CREATE INDEX idx_orders_created ON orders(created_at);
-CREATE INDEX idx_items_order    ON order_items(order_id);
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_status')  = 0, 'CREATE INDEX idx_orders_status  ON orders(status)',        'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_created') = 0, 'CREATE INDEX idx_orders_created ON orders(created_at)',     'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='order_items' AND INDEX_NAME='idx_items_order')    = 0, 'CREATE INDEX idx_items_order    ON order_items(order_id)', 'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
