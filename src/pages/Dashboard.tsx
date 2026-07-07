@@ -134,18 +134,20 @@ function TableCard({ table, order, occupied, customerTypes, onNew, onAdd, onPay,
   onPay: () => void;
   onView: () => void;
 }) {
+  const isReady = order?.status === 'ready';
   const statusLabel = occupied
-    ? (order?.status === 'waiting' ? 'Esperando' : order?.status === 'cooking' ? 'Cocinando' : order?.status === 'ready' ? 'Lista' : 'Ocupada')
+    ? (order?.status === 'waiting' ? 'Esperando' : order?.status === 'cooking' ? 'Cocinando' : isReady ? '✔ Lista para entregar' : 'Ocupada')
     : 'Disponible';
+  const dotClass = occupied ? (isReady ? 'dot-ready' : 'dot-occupied') : 'dot-available';
 
   return (
-    <div className={`table-card${occupied ? ' occupied' : ''}`} onClick={occupied ? onView : undefined}>
+    <div className={`table-card${occupied ? ' occupied' : ''}${isReady ? ' table-ready' : ''}`} onClick={occupied ? onView : undefined}>
       <div className="table-card-header">
         <span className="table-name">{table.name}</span>
         <span className="table-capacity"><PeopleIcon /> {table.capacity}</span>
       </div>
       <div className="table-status">
-        <span className={`status-dot dot-${occupied ? 'occupied' : 'available'}`} />
+        <span className={`status-dot ${dotClass}`} />
         <span className="status-label">{statusLabel}</span>
       </div>
       {occupied && order && (
@@ -171,12 +173,21 @@ function TableCard({ table, order, occupied, customerTypes, onNew, onAdd, onPay,
           >
             <PlusIcon /> Agregar
           </button>
-          <button
-            className="btn-primary table-action-btn"
-            onClick={e => { e.stopPropagation(); onPay(); }}
-          >
-            <PayIcon /> Cobrar
-          </button>
+          {order?.status === 'ready' ? (
+            <button
+              className="btn-green table-action-btn"
+              onClick={e => { e.stopPropagation(); onPay(); }}
+            >
+              <CheckIcon /> Finalizar
+            </button>
+          ) : (
+            <button
+              className="btn-primary table-action-btn"
+              onClick={e => { e.stopPropagation(); onView(); }}
+            >
+              <EyeIcon /> Ver orden
+            </button>
+          )}
         </div>
       ) : (
         <button className="btn-primary table-order-btn" onClick={onNew}>
@@ -196,6 +207,9 @@ function CartIcon() {
 function PlusIcon() {
   return <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 2v10M2 7h10"/></svg>;
 }
-function PayIcon() {
-  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="3" width="12" height="8" rx="1.5"/><path d="M1 6h12"/></svg>;
+function EyeIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><ellipse cx="7" cy="7" rx="6" ry="1"/><ellipse cx="7" cy="7" rx="6" ry="4"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/></svg>;
+}
+function CheckIcon() {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7l4 4 6-6"/></svg>;
 }

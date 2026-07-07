@@ -20,11 +20,11 @@
     "setup": "node scripts/setup.cjs",
     "docker": "node scripts/setup.cjs",
     "docker:create": "node scripts/docker-create.cjs",
+    "docker:update": "docker compose up -d --build && node scripts/docker-create.cjs",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v && node scripts/setup.cjs",
     "docker:logs": "docker compose logs -f",
-    "docker:create": "node scripts/docker-create.cjs",
     "docker:logs:api": "docker compose logs -f api",
     "docker:logs:db": "docker compose logs -f db"
   },
