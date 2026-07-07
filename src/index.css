@@ -77,8 +77,48 @@ html, body, #root { height: 100%; font-family: 'Inter', system-ui, sans-serif; b
 .login-title { font-size: 28px; font-weight: 800; color: var(--brown-dark); }
 .login-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; margin-top: 4px; }
 .login-form { text-align: left; display: flex; flex-direction: column; gap: 14px; }
-.login-error { font-size: 12px; color: #ef4444; text-align: center; }
-.login-hint { font-size: 11px; color: var(--text-muted); margin-top: 20px; }
+.login-error { font-size: 12px; color: #ef4444; text-align: center; min-height: 18px; margin: 4px 0; }
+.login-hint { font-size: 11px; color: var(--text-muted); margin-top: 16px; }
+
+/* PIN dots */
+.pin-dots { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 16px 0 8px; min-height: 28px; flex-wrap: wrap; padding: 0 8px; }
+.pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); transition: background 0.12s, border-color 0.12s; flex-shrink: 0; }
+.pin-dot-filled { background: var(--amber); border-color: var(--amber); }
+
+/* Numpad */
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.numpad-key {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--brown-dark);
+  height: 64px;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.08s, box-shadow 0.1s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.numpad-key:hover:not(:disabled) { background: #f5f0e8; box-shadow: 0 4px 12px rgba(0,0,0,0.10); }
+.numpad-key:active:not(:disabled) { transform: scale(0.94); background: #fef3c7; }
+.numpad-key:disabled { opacity: 0.35; cursor: not-allowed; }
+.numpad-back { font-size: 20px; color: var(--text-muted); }
+.numpad-confirm { background: var(--amber); color: #fff; border-color: var(--amber); font-size: 18px; }
+.numpad-confirm:hover:not(:disabled) { background: #b87820; border-color: #b87820; }
+.numpad-confirm:active:not(:disabled) { background: #a06818; }
+
+/* Shake animation on error */
+@keyframes login-shake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-10px); }
+  40%      { transform: translateX(10px); }
+  60%      { transform: translateX(-8px); }
+  80%      { transform: translateX(8px); }
+}
+.login-shake { animation: login-shake 0.45s ease; }
 
 /* Form fields */
 .field-group { display: flex; flex-direction: column; gap: 4px; }

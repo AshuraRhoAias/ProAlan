@@ -9,6 +9,7 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES_IN ?? '12h';
 export const login = async (req: Request, res: Response) => {
   const { pin, name } = req.body as { pin?: string; name?: string };
   if (!pin) return res.status(400).json({ error: 'PIN requerido' });
+  if (!/^\d{4,20}$/.test(pin)) return res.status(400).json({ error: 'El PIN debe tener entre 4 y 20 dígitos numéricos' });
 
   const [rows] = await UserModel.findByPin(pin);
   if (!rows.length) return res.status(401).json({ error: 'PIN inválido' });

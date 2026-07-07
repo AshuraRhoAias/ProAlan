@@ -1,31 +1,89 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { authApi } from '../services/api';
 
 interface Props {
-  onLogin: (name: string, pin: string) => Promise<boolean>;
-  loading?: boolean;
-  serverError?: string;
+  onLogin: (token: string, user: { id: number; name: string; role: string }) => void;
 }
 
-export default function Login({ onLogin, loading = false, serverError = '' }: Props) {
-  const [name, setName]   = useState('');
-  const [pin, setPin]     = useState('');
-  const [error, setError] = useState('');
+const KEYS = ['1','2','3','4','5','6','7','8','9','←','0','✓'];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!name.trim()) { setError('Ingresa tu usuario'); return; }
-    if (!pin)         { setError('Ingresa tu PIN'); return; }
-    const ok = await onLogin(name.trim(), pin);
-    if (!ok) setError(serverError || 'Usuario o PIN incorrecto');
+export default function Login({ onLogin }: Props) {
+  const [pin, setPin]       = useState('');
+  const [error, setError]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [shake, setShake]   = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const MAX = 20;
+  const MIN = 4;
+
+  const triggerShake = () => {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
   };
 
-  const pressPin = (v: string) => setPin(p => p.length < 4 ? p + v : p);
-  const delPin   = ()          => setPin(p => p.slice(0, -1));
+  const submit = useCallback(async (currentPin: string) => {
+    if (currentPin.length < MIN) {
+      setError(`El PIN debe tener al menos ${MIN} dígitos`);
+      triggerShake();
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await authApi.login('', currentPin);
+      onLogin(res.token, res.user);
+    } catch {
+      setError('PIN incorrecto');
+      setPin('');
+      triggerShake();
+    } finally {
+      setLoading(false);
+    }
+  }, [onLogin]);
+
+  const pressKey = useCallback((key: string) => {
+    if (loading) return;
+    if (key === '←') {
+      setPin(p => p.slice(0, -1));
+      setError('');
+    } else if (key === '✓') {
+      submit(pin);
+    } else {
+      setPin(p => {
+        if (p.length >= MAX) return p;
+        const next = p + key;
+        setError('');
+        return next;
+      });
+    }
+  }, [loading, pin, submit]);
+
+  // Soporte teclado físico
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key >= '0' && e.key <= '9') {
+        pressKey(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        pressKey('←');
+      } else if (e.key === 'Enter') {
+        pressKey('✓');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [pressKey]);
+
+  // Foco automático para evitar que el usuario tenga que hacer click
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const dots = Array.from({ length: Math.max(pin.length, MIN) }, (_, i) => (
+    <span key={i} className={`pin-dot ${i < pin.length ? 'pin-dot-filled' : ''}`} />
+  ));
 
   return (
     <div className="login-bg">
-      <div className="login-card">
+      <div className={`login-card ${shake ? 'login-shake' : ''}`}>
         <div className="login-logo">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
             <path d="M10 40L24 8L38 40" stroke="#C4872A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
@@ -33,50 +91,51 @@ export default function Login({ onLogin, loading = false, serverError = '' }: Pr
           </svg>
         </div>
         <h1 className="login-title">MastrFlow</h1>
-        <p className="login-subtitle">Restaurant Management System</p>
+        <p className="login-subtitle">Ingresa tu PIN</p>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="field-group">
-            <label className="field-label">Usuario</label>
-            <input
-              className="field-input"
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Nombre de usuario"
-              autoFocus
-              autoComplete="username"
-            />
-          </div>
+        {/* Campo oculto — mantiene el foco para recibir eventos de teclado */}
+        <input
+          ref={inputRef}
+          type="password"
+          inputMode="numeric"
+          value={pin}
+          onChange={() => {}}
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
+          aria-hidden="true"
+        />
 
-          <div className="field-group">
-            <label className="field-label">PIN</label>
-            <div className="pin-display">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <span key={i} className={`pin-dot ${i < pin.length ? 'pin-dot-filled' : ''}`} />
-              ))}
-            </div>
-            <div className="pin-grid">
-              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k, i) => (
-                <button
-                  key={i} type="button"
-                  className={`pin-key${k === '' ? ' pin-key-empty' : ''}`}
-                  onClick={() => k === '⌫' ? delPin() : k !== '' ? pressPin(k) : undefined}
-                  disabled={k === '' || loading}
-                >{k}</button>
-              ))}
-            </div>
-          </div>
+        {/* Indicador de dígitos */}
+        <div className="pin-dots">{dots}</div>
 
-          {(error || serverError) && <p className="login-error">{error || serverError}</p>}
+        {error && <p className="login-error">{error}</p>}
 
-          <button className="btn-primary w-full" type="submit" disabled={loading || !name || !pin}>
-            {loading ? 'Verificando…' : 'Ingresar'}
-          </button>
-        </form>
+        {/* Teclado numérico visual */}
+        <div className="numpad">
+          {KEYS.map(key => (
+            <button
+              key={key}
+              className={`numpad-key ${key === '✓' ? 'numpad-confirm' : ''} ${key === '←' ? 'numpad-back' : ''}`}
+              onClick={() => pressKey(key)}
+              disabled={loading || (key !== '←' && key !== '✓' && pin.length >= MAX)}
+              aria-label={key === '←' ? 'Borrar' : key === '✓' ? 'Confirmar' : key}
+            >
+              {loading && key === '✓' ? <SpinIcon /> : key}
+            </button>
+          ))}
+        </div>
 
-        <p className="login-hint">MastrFlow v1.0 · Powered by Tauri</p>
+        <p className="login-hint">PIN de {MIN}–{MAX} dígitos · Teclado físico soportado</p>
       </div>
     </div>
+  );
+}
+
+function SpinIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83">
+        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
+      </path>
+    </svg>
   );
 }
