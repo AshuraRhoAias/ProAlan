@@ -264,13 +264,14 @@ CREATE TABLE IF NOT EXISTS shopping_items (
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ── Índices (DROP + CREATE para idempotencia en MySQL 8.0) ───
-DROP INDEX IF EXISTS idx_orders_status  ON orders;
-DROP INDEX IF EXISTS idx_orders_table   ON orders;
-DROP INDEX IF EXISTS idx_orders_shift   ON orders;
-DROP INDEX IF EXISTS idx_orders_created ON orders;
-DROP INDEX IF EXISTS idx_items_order    ON order_items;
-DROP INDEX IF EXISTS idx_users_pin      ON users;
+-- ── Índices idempotentes via PREPARE/EXECUTE (MySQL 8.0) ─────
+-- DROP solo si existe, CREATE solo si no existe
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_status')  > 0, 'DROP INDEX idx_orders_status  ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_table')   > 0, 'DROP INDEX idx_orders_table   ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_shift')   > 0, 'DROP INDEX idx_orders_shift   ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='orders'      AND INDEX_NAME='idx_orders_created') > 0, 'DROP INDEX idx_orders_created ON orders',      'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='order_items' AND INDEX_NAME='idx_items_order')    > 0, 'DROP INDEX idx_items_order    ON order_items', 'SELECT 1'); PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
 CREATE INDEX idx_orders_status  ON orders(status);
 CREATE INDEX idx_orders_table   ON orders(table_id);
