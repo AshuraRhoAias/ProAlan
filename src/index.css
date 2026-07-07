@@ -599,6 +599,7 @@ html, body, #root { height: 100%; font-family: 'Inter', system-ui, sans-serif; b
 .pay-method-active { background: var(--surface); border-color: var(--amber); color: var(--amber); }
 .od-pay-btn { width: 100%; }
 .od-cancel-link { background: transparent; border: none; color: #ef4444; font-size: 12px; cursor: pointer; padding: 8px 20px; text-decoration: underline; }
+.od-close-btn { width: calc(100% - 40px); margin: 8px 20px 16px; }
 .od-msg { padding: 6px 20px; font-size: 13px; font-weight: 600; border-radius: 0; }
 .od-msg-ok  { color: #10b981; }
 .od-msg-err { color: #ef4444; }

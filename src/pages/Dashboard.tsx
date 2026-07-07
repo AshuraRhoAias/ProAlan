@@ -41,7 +41,7 @@ export default function Dashboard({ restaurantName }: Props) {
   }, [load]);
 
   const getTableOrder = (tableId: number) =>
-    activeOrders.find(o => o.table_id === tableId && ['waiting','cooking','ready'].includes(o.status));
+    activeOrders.find(o => Number(o.table_id) === tableId && ['waiting','cooking','ready'].includes(o.status));
 
   const handleTableClick = (table: ApiTable) => {
     const order = getTableOrder(table.id);

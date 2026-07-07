@@ -63,7 +63,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
       .filter(([, q]) => q > 0)
       .map(([id, quantity]) => {
         const mi = menuItems.find(m => m.id === Number(id));
-        return { menu_item_id: Number(id), quantity, unit_price: mi?.price ?? 0 };
+        return { menu_item_id: Number(id), quantity, unit_price: Number(mi?.price ?? 0) };
       });
     if (!items.length) return;
     setLoading(true);
@@ -93,9 +93,9 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
     setLoading(true);
     try {
       await ordersApi.closeWithTip(orderId, tip, payMethod);
-      setMsg('✔ Orden cobrada');
-      onUpdated();
-      setTimeout(onClose, 700);
+      await refreshOrder();   // muestra orden como "Cerrada" dentro del modal
+      setMsg('✔ Orden cobrada — puedes cerrar');
+      onUpdated();            // refresca el dashboard (mesa queda libre)
     } catch { setMsg('Error al cobrar la orden'); }
     finally { setLoading(false); }
   };
@@ -105,8 +105,9 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
     setLoading(true);
     try {
       await ordersApi.cancel(orderId, subtotal);
+      await refreshOrder();
+      setMsg('✔ Orden cancelada');
       onUpdated();
-      onClose();
     } catch { setMsg('Error al cancelar'); }
     finally { setLoading(false); }
   };
@@ -332,8 +333,12 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
           </div>
         )}
 
-        {/* ── Cancel order ── */}
-        {!isClosed && (
+        {/* ── Footer actions ── */}
+        {isClosed ? (
+          <button className="btn-primary od-close-btn" onClick={onClose}>
+            Cerrar
+          </button>
+        ) : (
           <button className="od-cancel-link" onClick={handleCancelOrder} disabled={loading}>
             Cancelar orden completa
           </button>
