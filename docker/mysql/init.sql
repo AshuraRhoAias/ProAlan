@@ -54,6 +54,19 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_users_pin (pin)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ampliar columna pin a VARCHAR(20) si existía como CHAR(4)
+SET @pin_type = (
+  SELECT DATA_TYPE FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'pin'
+);
+SET @sql_pin = IF(@pin_type = 'char',
+  'ALTER TABLE users MODIFY COLUMN pin VARCHAR(20) NOT NULL',
+  'SELECT 1'
+);
+PREPARE stmt_pin FROM @sql_pin;
+EXECUTE stmt_pin;
+DEALLOCATE PREPARE stmt_pin;
+
 INSERT IGNORE INTO users (id, name, role, pin) VALUES
   (1, 'Admin',   'admin',   '0000'),
   (2, 'Manager', 'manager', '1234'),
@@ -117,6 +130,19 @@ CREATE TABLE IF NOT EXISTS menu_items (
   updated_at  TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES menu_categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Añadir columna allergens si la tabla existía sin ella
+SET @al_exists = (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'menu_items' AND COLUMN_NAME = 'allergens'
+);
+SET @sql_al = IF(@al_exists = 0,
+  'ALTER TABLE menu_items ADD COLUMN allergens VARCHAR(255) NOT NULL DEFAULT \'\'',
+  'SELECT 1'
+);
+PREPARE stmt_al FROM @sql_al;
+EXECUTE stmt_al;
+DEALLOCATE PREPARE stmt_al;
 
 INSERT IGNORE INTO menu_items (id, category_id, name, description, price, allergens, photo_url) VALUES
   -- Burgers
