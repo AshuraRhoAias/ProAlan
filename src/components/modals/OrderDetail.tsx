@@ -42,7 +42,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
     menuApi.getItems().then(setMenuItems).catch(() => {});
   }, [refreshOrder]);
 
-  const subtotal = order?.total ?? 0;
+  const subtotal = Number(order?.total ?? 0);
   const grandTotal = subtotal + tip;
 
   /* ── Actions ───────────────────────────────────────────────── */
@@ -189,7 +189,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
                     </div>
                   )}
                 </div>
-                <span className="od-item-price">{currencySymbol}{(item.quantity * item.unit_price).toFixed(2)}</span>
+                <span className="od-item-price">{currencySymbol}{(item.quantity * Number(item.unit_price)).toFixed(2)}</span>
                 {!isClosed && (
                   <button className="od-item-remove" onClick={() => handleCancelItem(item)} disabled={loading} title="Quitar">✕</button>
                 )}
@@ -203,7 +203,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
                     <span className="od-item-qty">{item.quantity}×</span>
                     <span className="od-item-name">{item.menu_item_name}</span>
                     <span className="od-item-price" style={{ textDecoration: 'line-through', opacity: 0.4 }}>
-                      {currencySymbol}{(item.quantity * item.unit_price).toFixed(2)}
+                      {currencySymbol}{(item.quantity * Number(item.unit_price)).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -218,13 +218,13 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
             {order.tip > 0 && (
               <div className="od-total-row">
                 <span>Propina</span>
-                <span>{currencySymbol}{order.tip.toFixed(2)}</span>
+                <span>{currencySymbol}{Number(order.tip).toFixed(2)}</span>
               </div>
             )}
             {isClosed && (
               <div className="od-total-row od-grand">
                 <span>Total cobrado</span>
-                <span>{currencySymbol}{(subtotal + order.tip).toFixed(2)}</span>
+                <span>{currencySymbol}{(subtotal + Number(order.tip)).toFixed(2)}</span>
               </div>
             )}
           </div>

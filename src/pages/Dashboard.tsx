@@ -125,7 +125,7 @@ function TableCard({ table, order, customerTypes, onClick }: {
       {isOccupied && order && (
         <div className="table-order-info">
           <span className="table-order-code">#{order.code}</span>
-          <span className="table-order-total">${order.total.toFixed(2)}</span>
+          <span className="table-order-total">${Number(order.total).toFixed(2)}</span>
         </div>
       )}
       <div className="channel-tags">
