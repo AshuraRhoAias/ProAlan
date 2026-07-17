@@ -120,6 +120,13 @@ VITE_API_URL=http://localhost:4000
 
 ---
 
+## Despliegue
+
+- **Frontend** — el sitio en `src/` se despliega como estático en Vercel (ver `vercel.json`). En el proyecto de Vercel configura `VITE_API_URL` apuntando a donde esté publicada la API.
+- **API** — `server/` es un servicio Node.js con MySQL y un stream SSE de larga duración, así que no va en Vercel. Ver [`server/README.md`](server/README.md) para cómo correrla y desplegarla.
+
+---
+
 ## Estructura del proyecto
 
 ```
