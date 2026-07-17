@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createEventSource, type ApiOrder } from '../services/api';
+import { getStoredToken } from '../lib/authStorage';
 
 interface Notification {
   id: string;
@@ -22,8 +23,8 @@ const uid = () => String(++_uid);
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notes, setNotes]   = useState<Notification[]>([]);
-  const esRef               = useRef<EventSource | null>(null);
-  const token               = localStorage.getItem('mastrflow_token');
+  const esRef               = useRef<{ close: () => void } | null>(null);
+  const token               = getStoredToken();
 
   const add = useCallback((n: Omit<Notification, 'id' | 'ts'>) => {
     const note = { ...n, id: uid(), ts: Date.now() };
