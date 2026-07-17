@@ -1,14 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { User } from '../types';
-
-const TOKEN_KEY   = 'mastrflow_token';
-const SESSION_KEY = 'mastrflow_session';
+import { getStoredUser, storeSession, clearSession } from '../lib/authStorage';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem(SESSION_KEY);
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<User | null>(() => getStoredUser());
 
   const login = (token: string, apiUser: { id: number; name: string; role: string }) => {
     const u: User = {
@@ -17,14 +12,12 @@ export function useAuth() {
       role: apiUser.role as User['role'],
       restaurant: 'MastrFlow',
     };
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(SESSION_KEY, JSON.stringify(u));
+    storeSession(token, u);
     setUser(u);
   };
 
   const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(SESSION_KEY);
+    clearSession();
     setUser(null);
   };
 

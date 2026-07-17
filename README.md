@@ -29,6 +29,27 @@ Sistema de gestión de pedidos y mesas para restaurantes. Interfaz de escritorio
 
 ---
 
+## Modo Demo (sin backend)
+
+El frontend (`src/`) funciona hoy como una **demo 100% autocontenida**: no hace ninguna llamada de red. Todos los datos (mesas, menú, órdenes, sesión, tema) se generan en el navegador y se guardan en **cookies**, así que el estado persiste entre recargas de página sin necesidad de Docker, MySQL ni la API de `server/`.
+
+Esto permite desplegar `src/` como sitio estático (por ejemplo en Vercel) sin configurar ninguna URL de backend.
+
+PINs de demo (ver `src/services/demoStore.ts`):
+
+| PIN | Usuario | Rol |
+|---|---|---|
+| `0000` | Admin | admin |
+| `1234` | Manager | manager |
+| `5678` | Chef | kitchen |
+| `9999` | Mesero | waiter |
+
+Para limpiar el estado de la demo, borra las cookies del sitio (o usa una ventana de incógnito).
+
+> El backend real (`server/` + MySQL, ver `server/README.md`) sigue existiendo en el repo pero el frontend actual no está conectado a él.
+
+---
+
 ## Requisitos previos
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS / Linux)
@@ -112,18 +133,14 @@ JWT_SECRET=cambia_esto_en_produccion
 CORS_ORIGIN=http://localhost:1420
 ```
 
-El frontend usa `VITE_API_URL` (por defecto `http://localhost:4000`):
-
-```env
-VITE_API_URL=http://localhost:4000
-```
+El frontend actual (modo demo) no requiere ninguna variable de entorno — no hace llamadas de red. `VITE_API_URL` solo la usan la API (`server/`) y código legacy sin usar (`src/lib/api.ts`).
 
 ---
 
 ## Despliegue
 
-- **Frontend** — el sitio en `src/` se despliega como estático en Vercel (ver `vercel.json`). En el proyecto de Vercel configura `VITE_API_URL` apuntando a donde esté publicada la API.
-- **API** — `server/` es un servicio Node.js con MySQL y un stream SSE de larga duración, así que no va en Vercel. Ver [`server/README.md`](server/README.md) para cómo correrla y desplegarla.
+- **Frontend** — el sitio en `src/` se despliega como estático en Vercel (ver `vercel.json`) sin configuración adicional: corre en modo demo con datos en cookies.
+- **API** — `server/` es un servicio Node.js con MySQL y un stream SSE de larga duración, así que no va en Vercel. Ver [`server/README.md`](server/README.md) para cómo correrla y desplegarla. Actualmente el frontend no está conectado a ella.
 
 ---
 
@@ -141,7 +158,9 @@ ProAlan/
 │   │   └── modals/
 │   │       ├── OrderModal.tsx    # Crear nueva orden
 │   │       └── OrderDetail.tsx   # Ver / gestionar orden activa
-│   ├── services/api.ts     # Cliente HTTP + SSE + tipos
+│   ├── services/
+│   │   ├── api.ts          # Superficie pública (tipos + wrapper del demo store)
+│   │   └── demoStore.ts    # "Backend" en memoria persistido en cookies
 │   └── index.css           # Estilos globales
 ├── server/                 # API Express.js
 │   └── src/
