@@ -4,6 +4,7 @@ import { ordersApi, menuApi, type ApiOrder, type ApiMenuItem, type ApiOrderItem 
 interface Props {
   orderId: number;
   currencySymbol?: string;
+  initialTab?: 'items' | 'add' | 'pay';
   onClose: () => void;
   onUpdated: () => void;
 }
@@ -23,10 +24,10 @@ const PAY_LABEL: Record<PayMethod, string> = {
   cash: '💵 Efectivo', card: '💳 Tarjeta', transfer: '📲 Transferencia', app: '📱 App',
 };
 
-export default function OrderDetail({ orderId, currencySymbol = '$', onClose, onUpdated }: Props) {
+export default function OrderDetail({ orderId, currencySymbol = '$', initialTab = 'items', onClose, onUpdated }: Props) {
   const [order,     setOrder]     = useState<ApiOrder | null>(null);
   const [menuItems, setMenuItems] = useState<ApiMenuItem[]>([]);
-  const [tab,       setTab]       = useState<Tab>('items');
+  const [tab,       setTab]       = useState<Tab>(initialTab);
   const [tip,       setTip]       = useState(0);
   const [payMethod, setPayMethod] = useState<PayMethod>('cash');
   const [addQty,    setAddQty]    = useState<Record<number, number>>({});
@@ -42,7 +43,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
     menuApi.getItems().then(setMenuItems).catch(() => {});
   }, [refreshOrder]);
 
-  const subtotal = order?.total ?? 0;
+  const subtotal = Number(order?.total ?? 0);
   const grandTotal = subtotal + tip;
 
   /* ── Actions ───────────────────────────────────────────────── */
@@ -63,7 +64,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
       .filter(([, q]) => q > 0)
       .map(([id, quantity]) => {
         const mi = menuItems.find(m => m.id === Number(id));
-        return { menu_item_id: Number(id), quantity, unit_price: mi?.price ?? 0 };
+        return { menu_item_id: Number(id), quantity, unit_price: Number(mi?.price ?? 0) };
       });
     if (!items.length) return;
     setLoading(true);
@@ -93,9 +94,9 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
     setLoading(true);
     try {
       await ordersApi.closeWithTip(orderId, tip, payMethod);
-      setMsg('✔ Orden cobrada');
-      onUpdated();
-      setTimeout(onClose, 700);
+      await refreshOrder();   // muestra orden como "Cerrada" dentro del modal
+      setMsg('✔ Orden cobrada — puedes cerrar');
+      onUpdated();            // refresca el dashboard (mesa queda libre)
     } catch { setMsg('Error al cobrar la orden'); }
     finally { setLoading(false); }
   };
@@ -105,8 +106,9 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
     setLoading(true);
     try {
       await ordersApi.cancel(orderId, subtotal);
+      await refreshOrder();
+      setMsg('✔ Orden cancelada');
       onUpdated();
-      onClose();
     } catch { setMsg('Error al cancelar'); }
     finally { setLoading(false); }
   };
@@ -189,7 +191,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
                     </div>
                   )}
                 </div>
-                <span className="od-item-price">{currencySymbol}{(item.quantity * item.unit_price).toFixed(2)}</span>
+                <span className="od-item-price">{currencySymbol}{(item.quantity * Number(item.unit_price)).toFixed(2)}</span>
                 {!isClosed && (
                   <button className="od-item-remove" onClick={() => handleCancelItem(item)} disabled={loading} title="Quitar">✕</button>
                 )}
@@ -203,7 +205,7 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
                     <span className="od-item-qty">{item.quantity}×</span>
                     <span className="od-item-name">{item.menu_item_name}</span>
                     <span className="od-item-price" style={{ textDecoration: 'line-through', opacity: 0.4 }}>
-                      {currencySymbol}{(item.quantity * item.unit_price).toFixed(2)}
+                      {currencySymbol}{(item.quantity * Number(item.unit_price)).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -218,13 +220,13 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
             {order.tip > 0 && (
               <div className="od-total-row">
                 <span>Propina</span>
-                <span>{currencySymbol}{order.tip.toFixed(2)}</span>
+                <span>{currencySymbol}{Number(order.tip).toFixed(2)}</span>
               </div>
             )}
             {isClosed && (
               <div className="od-total-row od-grand">
                 <span>Total cobrado</span>
-                <span>{currencySymbol}{(subtotal + order.tip).toFixed(2)}</span>
+                <span>{currencySymbol}{(subtotal + Number(order.tip)).toFixed(2)}</span>
               </div>
             )}
           </div>
@@ -332,8 +334,12 @@ export default function OrderDetail({ orderId, currencySymbol = '$', onClose, on
           </div>
         )}
 
-        {/* ── Cancel order ── */}
-        {!isClosed && (
+        {/* ── Footer actions ── */}
+        {isClosed ? (
+          <button className="btn-primary od-close-btn" onClick={onClose}>
+            Cerrar
+          </button>
+        ) : (
           <button className="od-cancel-link" onClick={handleCancelOrder} disabled={loading}>
             Cancelar orden completa
           </button>

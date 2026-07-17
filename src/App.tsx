@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth, type User } from './hooks/useAuth';
+import { useAuth } from './hooks/useAuth';
+import type { User } from './types';
 import { NotificationProvider } from './context/NotificationContext';
 import TopBar from './components/TopBar';
 import Login from './pages/Login';
@@ -27,7 +28,7 @@ function ProtectedLayout({ user, onLogout }: {
 }
 
 export default function App() {
-  const { user, login, logout, loading, authError } = useAuth();
+  const { user, login, logout } = useAuth();
 
   return (
     <BrowserRouter>
@@ -35,7 +36,7 @@ export default function App() {
         {user ? (
           <ProtectedLayout user={user} onLogout={logout} />
         ) : (
-          <Login onLogin={login} loading={loading} serverError={authError} />
+          <Login onLogin={login} />
         )}
       </NotificationProvider>
     </BrowserRouter>

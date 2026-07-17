@@ -147,7 +147,10 @@ export const OrderModel = {
         await db.query('INSERT INTO order_item_modifiers (order_item_id, name, type) VALUES ?', [vals]);
       }
     }
-    await db.query('UPDATE orders SET total = total + ? WHERE id = ?', [addedTotal, orderId]);
+    await db.query(
+      'UPDATE orders SET total = total + ?, status = "waiting", started_at = NULL WHERE id = ? AND status != "closed" AND status != "cancelled"',
+      [addedTotal, orderId]
+    );
   },
 
   closeWithTip: async (id: number, tip: number, paymentMethod: string) => {

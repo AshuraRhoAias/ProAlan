@@ -57,7 +57,7 @@ export default function FindOrder({ onClose }: Props) {
                   <span className="order-status-badge" style={{ backgroundColor: statusColor(order.status) }}>
                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                   </span>
-                  <span className="order-total">${order.total.toFixed(2)}</span>
+                  <span className="order-total">${Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
             ))}
