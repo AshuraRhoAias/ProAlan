@@ -1,74 +1,48 @@
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
-
-function getToken() { return localStorage.getItem('mastrflow_token') ?? ''; }
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error ?? 'Error del servidor');
-  }
-  return res.json();
-}
-
-const get   = <T>(path: string)               => request<T>(path, { method: 'GET' });
-const post  = <T>(path: string, body: unknown) => request<T>(path, { method: 'POST',  body: JSON.stringify(body) });
-const patch = <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) });
+// Demo-mode API surface. This app runs standalone in the browser — there is no
+// backend. All calls are served by `demoStore`, which keeps state in memory and
+// persists it to cookies so a demo session survives page reloads.
+import { demoStore, subscribe } from './demoStore';
 
 // ── Auth ──────────────────────────────────────────────────────
 export const authApi = {
-  login: (_name: string, pin: string) => post<{ token: string; user: ApiUser }>('/api/auth/login', { pin }),
-  me:    () => get<ApiUser>('/api/auth/me'),
+  login: (_name: string, pin: string) => demoStore.login(pin),
+  me:    () => { throw new Error('No implementado en modo demo'); },
 };
 
 // ── Menu ──────────────────────────────────────────────────────
 export const menuApi = {
-  getItems:      () => get<ApiMenuItem[]>('/api/menu'),
-  getCategories: () => get<ApiCategory[]>('/api/menu/categories'),
+  getItems:      () => demoStore.getMenuItems(),
+  getCategories: () => demoStore.getCategories(),
 };
 
 // ── Restaurant ────────────────────────────────────────────────
 export const restaurantApi = {
-  get:              () => get<ApiRestaurant>('/api/restaurant'),
-  getCustomerTypes: () => get<ApiCustomerType[]>('/api/restaurant/customer-types'),
-  getTables:        () => get<ApiTable[]>('/api/restaurant/tables'),
-  getShifts:        () => get<ApiShift[]>('/api/shifts'),
-  getCurrentShift:  () => get<ApiShift | null>('/api/shifts/current'),
+  get:              () => demoStore.getRestaurant(),
+  getCustomerTypes: () => demoStore.getCustomerTypes(),
+  getTables:        () => demoStore.getTables(),
+  getShifts:        () => Promise.resolve<ApiShift[]>([]),
+  getCurrentShift:  () => demoStore.getCurrentShift(),
 };
 
 // ── Orders ────────────────────────────────────────────────────
 export const ordersApi = {
-  getAll:      (status?: string) => get<ApiOrder[]>(`/api/orders${status ? `?status=${status}` : ''}`),
-  getById:     (id: number)      => get<ApiOrder>(`/api/orders/${id}`),
-  create:      (data: CreateOrderPayload) => post<{ orderId: number; code: string }>('/api/orders', data),
-  addItems:    (id: number, items: OrderItemPayload[]) => post<{ ok: boolean }>(`/api/orders/${id}/items`, { items }),
-  updateStatus:(id: number, status: string) => patch<{ ok: boolean }>(`/api/orders/${id}/status`, { status }),
+  getAll:      (status?: string) => demoStore.getOrders(status),
+  getById:     (id: number)      => demoStore.getOrderById(id),
+  create:      (data: CreateOrderPayload) => demoStore.createOrder(data),
+  addItems:    (id: number, items: OrderItemPayload[]) => demoStore.addItems(id, items).then(() => ({ ok: true })),
+  updateStatus:(id: number, status: string) => demoStore.updateOrderStatus(id, status).then(() => ({ ok: true })),
   closeWithTip:(id: number, tip: number, payment_method: string) =>
-    patch<{ ok: boolean }>(`/api/orders/${id}/close`, { tip, payment_method }),
+    demoStore.closeWithTip(id, tip, payment_method).then(() => ({ ok: true })),
   cancelItem:  (id: number, itemId: number) =>
-    patch<{ ok: boolean }>(`/api/orders/${id}/items/${itemId}/cancel`, {}),
+    demoStore.cancelItem(id, itemId).then(() => ({ ok: true })),
   cancel:      (id: number, cancelled_value: number) =>
-    patch<{ ok: boolean }>(`/api/orders/${id}/cancel`, { cancelled_value }),
-  search:      (q: string) => get<ApiOrder[]>(`/api/orders/search?q=${encodeURIComponent(q)}`),
+    demoStore.cancelOrder(id, cancelled_value).then(() => ({ ok: true })),
+  search:      (q: string) => demoStore.searchOrders(q),
 };
 
-// ── SSE ───────────────────────────────────────────────────────
-export function createEventSource(onMessage: (type: string, data: unknown) => void): EventSource {
-  const es = new EventSource(`${BASE}/api/events`);
-  es.onmessage = (e) => { try { onMessage('message', JSON.parse(e.data)); } catch (_) {} };
-  ['order_new','order_status','shift_open','shift_close'].forEach(t => {
-    es.addEventListener(t, (e: MessageEvent) => {
-      try { onMessage(t, JSON.parse(e.data)); } catch (_) {}
-    });
-  });
-  return es;
+// ── Live updates (in-process pub/sub — stands in for SSE) ───────
+export function createEventSource(onMessage: (type: string, data: unknown) => void): { close: () => void } {
+  return { close: subscribe(onMessage) };
 }
 
 // ── Types ─────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getJSON, setJSON } from '../../lib/cookies';
 
 export interface RestaurantConfig {
   name: string;
@@ -21,15 +22,10 @@ const DEFAULTS: RestaurantConfig = {
 const STORAGE_KEY = 'mastrflow_restaurant_settings';
 
 export function useRestaurantSettings(): [RestaurantConfig, (c: RestaurantConfig) => void] {
-  const [config, setConfig] = useState<RestaurantConfig>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? { ...DEFAULTS, ...JSON.parse(stored) } : DEFAULTS;
-    } catch { return DEFAULTS; }
-  });
+  const [config, setConfig] = useState<RestaurantConfig>(() => getJSON(STORAGE_KEY, DEFAULTS));
 
   const save = (c: RestaurantConfig) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
+    setJSON(STORAGE_KEY, c);
     setConfig(c);
   };
 
@@ -39,16 +35,11 @@ export function useRestaurantSettings(): [RestaurantConfig, (c: RestaurantConfig
 interface Props { onClose: () => void }
 
 export default function RestaurantSettings({ onClose }: Props) {
-  const [cfg, setCfg] = useState<RestaurantConfig>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? { ...DEFAULTS, ...JSON.parse(stored) } : { ...DEFAULTS };
-    } catch { return { ...DEFAULTS }; }
-  });
+  const [cfg, setCfg] = useState<RestaurantConfig>(() => getJSON(STORAGE_KEY, DEFAULTS));
   const [newType, setNewType] = useState('');
 
   const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    setJSON(STORAGE_KEY, cfg);
     onClose();
   };
 

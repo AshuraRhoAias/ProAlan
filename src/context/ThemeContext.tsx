@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { getCookie, setCookie } from '../lib/cookies';
 
 export interface ThemeConfig {
   id: string;
@@ -71,12 +72,12 @@ function applyTheme(themeId: string) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeId] = useState<string>(() => localStorage.getItem(STORAGE_KEY) ?? 'warm');
+  const [themeId, setThemeId] = useState<string>(() => getCookie(STORAGE_KEY) ?? 'warm');
 
   useEffect(() => { applyTheme(themeId); }, [themeId]);
 
   const setTheme = (id: string) => {
-    localStorage.setItem(STORAGE_KEY, id);
+    setCookie(STORAGE_KEY, id);
     setThemeId(id);
   };
 
